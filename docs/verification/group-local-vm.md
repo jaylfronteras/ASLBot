@@ -89,11 +89,9 @@ therefore uses the composer destination selector for now.
 Run the regression coverage without a container engine:
 
 ```sh
-node node_modules/vitest/vitest.mjs run server/group-local-vm.e2e.test.ts server/vps-routing.test.ts server/local-vm-lease.test.ts server/group-goal-run.test.ts server/group-goal-run.e2e.test.ts server/group-goal-wait-cap.e2e.test.ts server/control-jlfbot.test.ts
+node node_modules/vitest/vitest.mjs run server/local-vm-lease.test.ts server/group-goal-run.test.ts server/group-goal-run.e2e.test.ts server/group-goal-wait-cap.e2e.test.ts server/control-jlfbot.test.ts
 ```
 
-The test-only Node loader in `server/testing/group-local-vm-hooks.mjs` replaces
-container status and controls lease expiry and watchdog/deadline timing inside
-that child process.
-Production launchers never import it. No provider or live desktop is used by
-these regression tests; the opt-in Podman acceptance above covers real routing.
+Computer-use mounts are not part of ASLBot, so this command keeps the goal,
+lease, and control regressions. No provider or live desktop is used by these
+regression tests.
