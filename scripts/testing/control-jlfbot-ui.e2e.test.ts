@@ -17,7 +17,7 @@ import { resolveAgentBrowserBinary } from "../../server/browser-engine.ts";
 import { removeTempDir, waitForExit } from "../../server/testing/cleanup.ts";
 import { runControlOmb } from "../control-jlfbot.ts";
 import { UI_TOOLS_DIR } from "./control-jlfbot-ui.ts";
-import { fixtureApi } from "./preview-fixture.ts";
+import { allowFixtureChat, fixtureApi, typeComposerDraft } from "./preview-fixture.ts";
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const CLI = join(ROOT, "scripts", "control-jlfbot.ts");
@@ -228,6 +228,12 @@ describe("control-jlfbot ui drives the real renderer", () => {
     // needs no flag; the fixture's default config is what a fresh install has.
     expect(flagged.features).toMatchObject({ skillAuthoring: true });
 
+    // CLI engines stay in the fixture so the fake can answer, but the chat
+    // stays closed until an OpenAI-compatible provider is available.
+    await allowFixtureChat(info.url);
+    await expect.poll(async () => (await ui("eval", info.ui, "--js", "document.querySelector('textarea')?.getAttribute('aria-label') ?? ''")).result,
+      { timeout: 15_000 }).toBe("Message Pepper");
+
     const before = await ui("snapshot", info.ui, "--interactive");
     expect(before.ok).toBe(true);
     const [composer, ...moreComposers] = refsNamed(before, "Message Pepper", "textbox");
@@ -235,10 +241,10 @@ describe("control-jlfbot ui drives the real renderer", () => {
     expect(moreComposers).toEqual([]);
     expect(before.snapshot).not.toContain(REPLY);
 
-    const typed = await ui("type", info.ui, "--ref", composer, "--text", "hello");
-    expect(typed).toMatchObject({ ok: true, target: composer, typed: "hello" });
-    const pressed = await ui("press", info.ui, "--keys", "Enter");
-    expect(pressed).toMatchObject({ ok: true, pressed: "Enter" });
+    const typed = await typeComposerDraft(ui, info.ui, "Message Pepper", "hello");
+    expect(typed).toMatchObject({ ok: true, name: "Message Pepper", typed: "hello" });
+    const sent = await ui("click", info.ui, "--name", "Send message");
+    expect(sent).toMatchObject({ ok: true, name: "Send message" });
 
     const settled = await ui("wait-settle", info.ui, "--timeout", "60");
     expect(settled).toMatchObject({ ok: true, status: "settled", browser: { state: "networkidle" }, renderer: { rendered: true } });

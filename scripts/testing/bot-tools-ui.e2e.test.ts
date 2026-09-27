@@ -10,6 +10,7 @@ import { waitForExit } from "../../server/testing/cleanup.ts";
 import { BOT_ROLES, roleProfilePatch } from "../../src/lib/bot-roles.ts";
 import { runControlOmb } from "../control-jlfbot.ts";
 import { UI_TOOLS_DIR } from "./control-jlfbot-ui.ts";
+import { allowFixtureChat } from "./preview-fixture.ts";
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const binary = resolveAgentBrowserBinary({ dataDir: UI_TOOLS_DIR, env: process.env });
@@ -41,8 +42,10 @@ describe("bot setup and tools in the real renderer", () => {
       if (child!.exitCode !== null || child!.signalCode !== null) throw new Error(`UI launcher exited: ${stderr}`);
       try { info = JSON.parse(stdout); return Boolean(info.ui); } catch { return false; }
     }, { timeout: LAUNCH_TIMEOUT_MS + 120_000, interval: 250 }).toBe(true);
+    await allowFixtureChat(info.url);
     const ui = (verb: string, ...args: string[]) => runControlOmb(["ui", verb, "--ui", info.ui, ...args]) as Promise<Record<string, any>>;
     const evaluate = async (js: string) => (await ui("eval", "--js", js)).result;
+    await expect.poll(() => evaluate(`document.querySelector('textarea')?.getAttribute('aria-label') ?? ''`), { timeout: 15_000 }).toBe("Message Pepper");
     const click = (name: string) => ui("click", "--name", name);
     const press = (keys: string) => ui("press", "--keys", keys);
     const bots = async (): Promise<SavedBot[]> => (await fetch(`${info.url}/api/bots`).then((response) => response.json())).bots;

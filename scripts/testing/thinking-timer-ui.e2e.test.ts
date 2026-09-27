@@ -27,7 +27,7 @@ import { resolveAgentBrowserBinary } from "../../server/browser-engine.ts";
 import { removeTempDir, waitForExit } from "../../server/testing/cleanup.ts";
 import { runControlOmb } from "../control-jlfbot.ts";
 import { UI_TOOLS_DIR } from "./control-jlfbot-ui.ts";
-import { fixtureApi } from "./preview-fixture.ts";
+import { allowFixtureChat, fixtureApi, typeComposerDraft } from "./preview-fixture.ts";
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const CLI = join(ROOT, "scripts", "control-jlfbot.ts");
@@ -153,24 +153,18 @@ describe("the thinking timer stays anchored across a thread switch", () => {
   run("counts from the server's turn-start stamp, not from the re-selection", async () => {
     launched = await launch(["--mode", "hang"]); // the turn never settles; the bot stays busy
     const { info } = launched;
+    await allowFixtureChat(info.url);
     const api = fixtureApi(info.url);
     const evaluate = async (js: string) => (await ui("eval", info.ui, "--js", js)).result;
+    await waitUntil(async () => (await evaluate(`document.querySelector('textarea')?.getAttribute('aria-label') ?? ''`)) === "Message Pepper", 15_000, "Pepper's composer");
     const timerText = () => evaluate(`document.querySelector('.turn-presence .tabular-nums')?.textContent ?? null`);
     // Simple mode hides sidebar thread rows. History is the way back to an
     // older conversation; the server's active thread id is the source of truth.
+    // History is the on-screen control, and it posts this same task switch.
+    // Drive that request directly so the timer does not depend on the removed
+    // sidebar thread rows.
     const selectThread = async (threadId: string) => {
-      await ui("click", info.ui, "--name", "Earlier conversations with Pepper");
-      const outcome = await waitUntil(async () => {
-        const result = (await ui("eval", info.ui, "--js", `(() => {
-          const row = document.querySelector('[data-conversation-thread="${threadId}"]');
-          if (!row) return "";
-          if (row.getAttribute("aria-current") === "true") return "current";
-          row.click();
-          return "opened";
-        })()`)).result;
-        return result || null;
-      }, 10_000, "the conversation in History");
-      if (outcome === "current") await ui("press", info.ui, "--keys", "Escape");
+      await api("POST", `/api/bots/${info.botId}/tasks/${threadId}`, {});
     };
     const isCurrent = async (threadId: string) =>
       (await api("GET", "/api/bots")).bots.find((bot: any) => bot.id === info.botId).threadId === threadId;
@@ -187,8 +181,8 @@ describe("the thinking timer stays anchored across a thread switch", () => {
     await waitUntil(() => isCurrent(busyThread), 10_000, "the original thread to become current");
 
     // The composer sends; the hang-mode engine accepts the turn and holds it.
-    await ui("type", info.ui, "--name", "Message Pepper", "--text", "hello");
-    await ui("press", info.ui, "--keys", "Enter");
+    await typeComposerDraft(ui, info.ui, "Message Pepper", "hello");
+    await ui("click", info.ui, "--name", "Send message");
     const sentAt = Date.now();
 
     // The server stamps the turn's real start on the busy task.
@@ -238,8 +232,10 @@ describe("the thinking timer stays anchored across a thread switch", () => {
   run("counts a group's turn from the speaking member's claim, resuming after a switch away", async () => {
     launched = await launch(["--mode", "hang"]); // the group's turn never settles either
     const { info } = launched;
+    await allowFixtureChat(info.url);
     const api = fixtureApi(info.url);
     const evaluate = async (js: string) => (await ui("eval", info.ui, "--js", js)).result;
+    await waitUntil(async () => (await evaluate(`document.querySelector("textarea")?.getAttribute("aria-label") ?? ""`)) === "Message Pepper", 15_000, "the chat composer");
     const timerText = () => evaluate(`document.querySelector('.turn-presence .tabular-nums')?.textContent ?? null`);
     const showing = (label: string) => evaluate(`document.querySelector("textarea")?.getAttribute("aria-label") === ${JSON.stringify(label)}`);
     const botsState = () => api("GET", "/api/bots");
@@ -262,8 +258,8 @@ describe("the thinking timer stays anchored across a thread switch", () => {
     await waitUntil(() => showing("Message Timer group"), 10_000, "the group to become current");
 
     // The group's composer sends; the hang-mode engine holds the member's turn.
-    await ui("type", info.ui, "--name", "Message Timer group", "--text", "hello group");
-    await ui("press", info.ui, "--keys", "Enter");
+    await typeComposerDraft(ui, info.ui, "Message Timer group", "hello group");
+    await ui("click", info.ui, "--name", "Send message");
     const sentAt = Date.now();
 
     // The group claims its speaker and stamps the turn's real start.
