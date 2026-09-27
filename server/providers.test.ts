@@ -1,15 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { AppConfig } from "./config.ts";
-import { listProviders, parseProviderInput, PROVIDER_PRESETS, removeProvider, writeProvider } from "./providers.ts";
+import { listProviders, parseProviderInput, removeProvider, writeProvider } from "./providers.ts";
 
 describe("OpenAI-compatible providers", () => {
-  it("offers presets that only prefill a base URL", () => {
-    expect(PROVIDER_PRESETS.map((preset) => preset.id)).toEqual([
-      "deepseek", "openrouter", "groq", "openai", "ollama", "lmstudio",
-    ]);
-    expect(PROVIDER_PRESETS.find((preset) => preset.id === "ollama")?.url).toBe("http://127.0.0.1:11434/v1");
-  });
-
   it("creates, updates, and removes named providers without leaking keys into the summary", () => {
     const created = writeProvider({}, parseProviderInput({
       name: "DeepSeek",

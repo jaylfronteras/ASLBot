@@ -206,7 +206,7 @@ import {
 import type { GroupGoalRunCardData, GroupGoalRunStatus } from "../shared/group-goal-run.ts";
 
 import { BUILT_IN_DRIVERS } from "./drivers/builtIn.ts";
-import { listProviders, parseProviderInput, PROVIDER_PRESETS, removeProvider, writeProvider } from "./providers.ts";
+import { listProviders, parseProviderInput, removeProvider, writeProvider } from "./providers.ts";
 /** ASLBot never mounts a bot computer: no host CUA, Docker/Podman VM, Box, or VPS. */
 const COMPUTER_USE = false;
 import { getOrCreateChannel, mirrorActivity, mirrorExchange, mirrorReply, type CommsBus } from "./comms-visibility.ts";
@@ -18408,7 +18408,7 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
       return json(res, 200, { instances: await describeInstances() });
     }
     if (method === "GET" && path === "/api/providers") {
-      return json(res, 200, { presets: PROVIDER_PRESETS, providers: listProviders(cfg) });
+      return json(res, 200, { providers: listProviders(cfg) });
     }
     if (method === "POST" && path === "/api/providers") {
       if (!String(req.headers["content-type"] ?? "").toLowerCase().startsWith("application/json")) {

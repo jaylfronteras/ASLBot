@@ -3,9 +3,8 @@
 import { randomUUID } from "node:crypto";
 import type { AppConfig } from "./config.ts";
 import type { InstanceConfigMap } from "./contracts.ts";
-import { PROVIDER_PRESETS, type ProviderSummary } from "../shared/providers.ts";
+import type { ProviderSummary } from "../shared/providers.ts";
 
-export { PROVIDER_PRESETS };
 export type { ProviderSummary };
 
 const NAME_MAX = 80;
