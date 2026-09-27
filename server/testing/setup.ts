@@ -20,17 +20,21 @@ process.env.ASLBOT_TEST_ENGINES = "1";
 // those children. A spawn that already sets ASLBOT_TEST_ENGINES (including
 // "0" for a product-mode boot) is left alone.
 const originalSpawn = childProcess.spawn.bind(childProcess);
-childProcess.spawn = ((command: string, args?: readonly string[], options?: { env?: NodeJS.ProcessEnv }) => {
-  const launchesHarness = !!args?.some((arg) => /(?:^|[\\/])(?:index|jlfbot)\.ts$/.test(arg));
+childProcess.spawn = ((command: string, args?: readonly string[] | { env?: NodeJS.ProcessEnv }, options?: { env?: NodeJS.ProcessEnv }) => {
+  const argv = Array.isArray(args) ? args : [];
+  const opts = (Array.isArray(args) ? options : args) as { env?: NodeJS.ProcessEnv } | undefined;
+  const launchesHarness = argv.some((arg) => /(?:^|[\\/])(?:index|jlfbot)\.ts$/.test(arg));
   if (
-    options?.env &&
+    opts?.env &&
     launchesHarness &&
-    options.env.ASLBOT_TEST_ENGINES === undefined &&
+    opts.env.ASLBOT_TEST_ENGINES === undefined &&
     process.env.ASLBOT_TEST_ENGINES === "1"
   ) {
-    options.env.ASLBOT_TEST_ENGINES = "1";
+    opts.env.ASLBOT_TEST_ENGINES = "1";
   }
-  return originalSpawn(command, args as string[], options as object);
+  return Array.isArray(args)
+    ? originalSpawn(command, args, options as object)
+    : originalSpawn(command, args as object);
 }) as typeof childProcess.spawn;
 syncBuiltinESMExports();
 
