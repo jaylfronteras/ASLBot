@@ -24,7 +24,7 @@ export function PhonePreview({ className }: { className?: string }) {
           {/* chat header */}
           <div className="flex items-center gap-1.5 border-b border-hairline/40 px-3 py-1.5">
             <JlfAvatar color="green" state="happy" size={16} animated={false} trackPointer={false} />
-            <span className="text-[9.5px] font-semibold text-ink">JLFBot</span>
+            <span className="text-[9.5px] font-semibold text-ink">ASLBot</span>
             <span className="ml-auto size-1.5 rounded-full bg-success" />
           </div>
           {/* transcript */}
@@ -50,7 +50,7 @@ export function PhonePreview({ className }: { className?: string }) {
           </div>
           {/* composer */}
           <div className="mx-2.5 mb-2.5 rounded-full border border-hairline/40 bg-inset px-2.5 py-1.5 text-[8px] text-ink-secondary">
-            Message {brand().name === "JLFBot" ? "JLFBot" : brand().name}
+            Message {brand().name === "ASLBot" ? "ASLBot" : brand().name}
           </div>
         </div>
       </div>

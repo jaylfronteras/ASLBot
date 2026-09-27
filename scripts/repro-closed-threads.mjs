@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Reproduce: threads a bot opens with start_thread and later closes with
-// close_thread stay in the sidebar. Runs an isolated JLFBot server on a
+// close_thread stay in the sidebar. Runs an isolated ASLBot server on a
 // throwaway data dir with the repository's fake engine, then drives the same
 // internal endpoints the agents tools hit. Never touches the user's app data.
 //

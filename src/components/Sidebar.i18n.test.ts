@@ -11,6 +11,10 @@ import { StoreProvider, type Bot } from "@/state/store";
 vi.mock("./DesktopCapabilities", () => ({
   useDesktopCapabilities: () => ({}),
 }));
+vi.mock("@/lib/simple-mode", async (importOriginal) => {
+  const original = await importOriginal<typeof import("@/lib/simple-mode")>();
+  return { ...original, useSimpleMode: () => false };
+});
 
 import { BotListItem, BotThreadList, botConfirmCopy } from "./Sidebar";
 

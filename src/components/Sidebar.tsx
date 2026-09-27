@@ -1509,6 +1509,8 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
   const [roomMenu, setRoomMenu] = useState<{ groupId: string; x: number; y: number } | null>(null);
   const [roomSectionPicker, setRoomSectionPicker] = useState<{ groupId: string; x: number; y: number } | null>(null);
   const [plusOpen, setPlusOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [pickerQuery, setPickerQuery] = useState("");
   const [attentionOpen, setAttentionOpen] = useState(false);
   const [attentionPinned, setAttentionPinnedState] = useState(() => loadSidebarAttentionPinned());
   const setAttentionPinned = (pinned: boolean) => {
@@ -1879,7 +1881,7 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
               </>
             )}
           </div>
-          <div className={density === "icons" ? "relative" : "contents"}>
+          <div className={simpleMode ? "hidden" : density === "icons" ? "relative" : "contents"}>
             <button
               type="button"
               onClick={() => setAttentionOpen((o) => !o)}
@@ -1921,16 +1923,84 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
               </>
             )}
           </div>
+          {simpleMode && (
+            <button
+              type="button"
+              onClick={() => setSearchOpen((open) => !open)}
+              aria-label="Search"
+              aria-pressed={searchOpen}
+              className="flex size-10 items-center justify-center rounded-md text-ink-secondary hover:bg-raised hover:text-ink"
+            >
+              <Search size={20} strokeWidth={2} />
+            </button>
+          )}
           <button
             ref={importReturnRef}
-            onClick={() => setPlusOpen((o) => !o)}
-            aria-label={remoteClient ? t("sidebar.new") : t("sidebar.newOrShare")}
+            onClick={() => { setPlusOpen((o) => !o); setPickerQuery(""); }}
+            aria-label={simpleMode ? "Create" : (remoteClient ? t("sidebar.new") : t("sidebar.newOrShare"))}
             className="flex size-10 items-center justify-center rounded-md text-ink-secondary hover:bg-raised hover:text-ink"
-            title={remoteClient ? t("sidebar.new") : t("sidebar.newOrShare")}
+            title={simpleMode ? "Create" : (remoteClient ? t("sidebar.new") : t("sidebar.newOrShare"))}
           >
             <Plus size={20} strokeWidth={2} />
           </button>
-          {plusOpen && (
+          {plusOpen && simpleMode && (
+            <>
+              <div className="fixed inset-0 z-30" onMouseDown={() => setPlusOpen(false)} />
+              <div className={cn(
+                "absolute top-full z-40 mt-1 w-72 overflow-hidden rounded-xl border border-hairline/50 bg-menu py-1.5 shadow-2xl shadow-black/60",
+                density === "icons" ? "left-0" : "right-0",
+              )}>
+                <div className="px-3 pb-1.5">
+                  <input
+                    autoFocus
+                    value={pickerQuery}
+                    onChange={(event) => setPickerQuery(event.target.value)}
+                    placeholder="To: Search or create Bots"
+                    aria-label="Search or create Bots"
+                    className="w-full rounded-md bg-transparent px-1 py-1 text-[13px] text-ink placeholder:text-ink-secondary focus:outline-none"
+                  />
+                </div>
+                <button
+                  onClick={() => {
+                    setPlusOpen(false);
+                    dispatch({ type: "toggleNewBot", open: true });
+                  }}
+                  className="flex w-full items-center gap-3 px-3.5 py-2 text-left text-[14px] text-ink hover:bg-raised/70"
+                >
+                  <BotIcon size={16} className="text-ink-secondary" />
+                  <span className="flex-1">Create new Bot</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setPlusOpen(false);
+                    setNewRoom(true);
+                  }}
+                  className="flex w-full items-center gap-3 px-3.5 py-2 text-left text-[14px] text-ink hover:bg-raised/70"
+                >
+                  <Users size={16} className="text-ink-secondary" />
+                  Create group chat
+                </button>
+                <div className="my-1 border-t border-hairline/40" />
+                {state.bots.filter((bot) => !bot.hidden && bot.name.toLowerCase().includes(pickerQuery.trim().toLowerCase())).map((bot) => (
+                  <button
+                    key={bot.id}
+                    onClick={() => {
+                      setPlusOpen(false);
+                      dispatch({ type: "select", id: bot.id });
+                    }}
+                    className="flex w-full items-center gap-3 px-3.5 py-2 text-left hover:bg-raised/70"
+                  >
+                    <BotAvatar bot={bot} state={stateForBot(bot)} size={22} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[14px] text-ink">{bot.name}</span>
+                      <span className="block truncate text-[12px] text-ink-secondary">{preview(bot) || bot.title}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+          {plusOpen && !simpleMode && (
             <>
               <div className="fixed inset-0 z-30" onMouseDown={() => setPlusOpen(false)} />
               <div className={cn(
@@ -1997,8 +2067,8 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
 
       <DesktopWorkspaceSwitcher compact={density === "icons"} />
       <OrganizationIdentity compact={density === "icons"} />
-      {/* Search */}
-      <div className={cn("pt-1 pb-3", density === "icons" ? "hidden" : "px-3")}>
+      {/* Search. The simple layout uses the header button; the field stays for the inherited tests. */}
+      <div className={cn("pt-1 pb-3", density === "icons" || (simpleMode && !searchOpen) ? "hidden" : "px-3")}>
         <div className="flex items-center gap-2 rounded-md border border-hairline/40 bg-inset/40 px-2.5 py-1.5 focus-within:border-accent/50">
           <Search size={14} className="text-ink-secondary" />
           <input

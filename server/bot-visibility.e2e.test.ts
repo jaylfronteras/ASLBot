@@ -154,7 +154,7 @@ posixOnly("per-bot visibility on a shared workspace", () => {
   beforeAll(async () => {
     chmodSync(FAKE_CLI, 0o755);
     home = mkdtempSync(join(tmpdir(), "jlfbot-bot-visibility-"));
-    const data = join(home, ".jlfbot");
+    const data = join(home, ".aslbot");
     mkdirSync(data, { recursive: true });
     writeFileSync(join(data, "config.json"), JSON.stringify({
       signIn: { admins: [BOSS], members: [ADA, BOB] },
@@ -480,7 +480,7 @@ posixOnly("per-bot visibility on a shared workspace", () => {
     // A room turn after Payroll was restricted leaves no line in the
     // helpdesk's daily log, where its default-scope search would find it…
     const logLines = () => {
-      const dir = join(home, ".jlfbot", "workspaces", ids.pub, "memory", "log");
+      const dir = join(home, ".aslbot", "workspaces", ids.pub, "memory", "log");
       let text = "";
       try {
         for (const file of readdirSync(dir)) text += readFileSync(join(dir, file), "utf8");

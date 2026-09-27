@@ -74,9 +74,9 @@ function workspaceSummary(state) {
 
 /** Native identity must not depend on a hosted renderer's version/title. */
 function workspaceWindowTitle(state, companion) {
-  if (companion) return `JLFBot — Connected to: ${companion.serverName} (${new URL(companion.endpoint).host})`;
+  if (companion) return `ASLBot — Connected to: ${companion.serverName} (${new URL(companion.endpoint).host})`;
   const active = activeEnvironment(state);
-  return active ? `JLFBot — Hosted: ${active.name} (${new URL(active.origin).host})` : "JLFBot";
+  return active ? `ASLBot — Hosted: ${active.name} (${new URL(active.origin).host})` : "ASLBot";
 }
 
 /** Renderer navigation stays in the selected workspace. Switching is a main

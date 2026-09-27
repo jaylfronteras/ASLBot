@@ -1,13 +1,38 @@
 // Vitest setup — every test file gets a throwaway home directory so
-// DATA_DIR (~/.jlfbot) never touches the real one. os.homedir()
+// DATA_DIR (~/.aslbot) never touches the real one. os.homedir()
 // reads HOME (POSIX) / USERPROFILE (Windows) at call time, and this file
 // runs before any test module imports server/config.ts.
+import childProcess from "node:child_process";
 import { mkdtempSync } from "node:fs";
+import { syncBuiltinESMExports } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, afterEach } from "vitest";
 
 import { removeTempDir } from "./cleanup.ts";
+
+// The product server hides CLI engines and computer tools unless this is set.
+// Vitest workers set it so the inherited suite still boots those drivers.
+process.env.ASLBOT_TEST_ENGINES = "1";
+
+// Harness tests spawn server/index.ts with a whitelist env, which drops the
+// flag above and boots the product fleet (no CLI engines). Put it back on
+// those children. A spawn that already sets ASLBOT_TEST_ENGINES (including
+// "0" for a product-mode boot) is left alone.
+const originalSpawn = childProcess.spawn.bind(childProcess);
+childProcess.spawn = ((command: string, args?: readonly string[], options?: { env?: NodeJS.ProcessEnv }) => {
+  const launchesHarness = !!args?.some((arg) => /(?:^|[\\/])(?:index|jlfbot)\.ts$/.test(arg));
+  if (
+    options?.env &&
+    launchesHarness &&
+    options.env.ASLBOT_TEST_ENGINES === undefined &&
+    process.env.ASLBOT_TEST_ENGINES === "1"
+  ) {
+    options.env.ASLBOT_TEST_ENGINES = "1";
+  }
+  return originalSpawn(command, args as string[], options as object);
+}) as typeof childProcess.spawn;
+syncBuiltinESMExports();
 
 const home = mkdtempSync(join(tmpdir(), "jlfbot-test-home-"));
 process.env.HOME = home;

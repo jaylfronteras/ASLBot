@@ -4,9 +4,9 @@
 // `pnpm jlfbot` (a checkout) — because scripts/bundle-server.mjs bundles this
 // file next to the server.
 //
-//   jlfbot setup [--data-dir ~/.jlfbot]
+//   jlfbot setup [--data-dir ~/.aslbot]
 //   jlfbot start [serve options]
-//   jlfbot serve [--port 8799] [--data-dir ~/.jlfbot] [--label "cab mini"]
+//   jlfbot serve [--port 8799] [--data-dir ~/.aslbot] [--label "cab mini"]
 //                     [--public-url https://host] [--tailscale | --tunnel | --domain HOST] [--no-pair]
 //   jlfbot pair  [--label "My MacBook"] [--client] [--public-url https://host]
 //   jlfbot sessions [revoke <id>]
@@ -125,7 +125,7 @@ export function parseArgs(argv: string[], env: NodeJS.ProcessEnv = process.env):
   }
   const options: CliOptions = {
     command: command === "--help" || command === "-h" ? "help" : (command as CliOptions["command"]),
-    port: Number(env.JLFBOT_PORT || 8799),
+    port: Number(env.ASLBOT_PORT || env.JLFBOT_PORT || 8899),
     dataDir: env.JLFBOT_DATA_DIR || defaultDataDir(homedir()),
     tailscale: false,
     tunnel: false,
@@ -245,7 +245,7 @@ serve   starts the server without prompts and prints a pairing link + QR code
 pair    mints a pairing code against a running server (--client: chat only)
 sessions lists paired devices; "sessions revoke ID" signs one out
 status  what the server says about itself
-login   signs this machine in to an JLFBot account (an emailed code)
+login   signs this machine in to an ASLBot account (an emailed code)
         and reserves its public address for --tunnel
 logout  releases that address and signs out
 access  who may sign in with an emailed code at /pair: an address or
@@ -349,7 +349,7 @@ function refusedAsService(status: number, body: any): boolean {
 async function serverUp(port: number, pid?: number): Promise<boolean> {
   try {
     const { status, body } = await api(port, "/api/health");
-    return status === 200 && body?.app === "jlfbot" && (pid === undefined || body.pid === pid);
+    return status === 200 && body?.app === "aslbot" && (pid === undefined || body.pid === pid);
   } catch {
     return false;
   }
@@ -360,7 +360,7 @@ async function serverUp(port: number, pid?: number): Promise<boolean> {
 export async function isWorkspaceRunning(options: CliOptions): Promise<boolean> {
   try {
     const { status, body } = await api(options.port, "/api/health");
-    if (status !== 200 || body?.app !== "jlfbot") return false;
+    if (status !== 200 || body?.app !== "aslbot") return false;
     const expected = readFileSync(join(options.dataDir, "environment-id"), "utf8").trim();
     const descriptor = await api(options.port, "/.well-known/jlfbot/environment");
     return /^[0-9a-f-]{36}$/i.test(expected) && descriptor.status === 200 && descriptor.body?.environmentId === expected;
@@ -473,7 +473,7 @@ export function pairingBlock(input: {
     lines.push(qrToString(target));
     lines.push("");
     if (scanInvite) {
-      lines.push(`Scan that in the JLFBot app. For a browser instead, open the web`);
+      lines.push(`Scan that in the ASLBot app. For a browser instead, open the web`);
       lines.push(`address above and type the code.`);
     } else if (input.phone === "android") {
       // Android asked for an app invite this server cannot build. Say so,
@@ -484,7 +484,7 @@ export function pairingBlock(input: {
       lines.push(`JLFBOT_PUBLIC_URL, or open the web address above and type the code.`);
     } else if (input.inviteUrl) {
       lines.push(`Scan that with Camera for the browser, or paste the phone-app link`);
-      lines.push(`above into the JLFBot app.`);
+      lines.push(`above into the ASLBot app.`);
     }
   }
   return lines.join("\n");
@@ -535,7 +535,7 @@ async function mintPairing(port: number, options: { label?: string; client?: boo
 // ── commands ───────────────────────────────────────────────────────────
 export async function runPair(options: CliOptions): Promise<number> {
   if (!(await serverUp(options.port))) {
-    console.error(`no JLFBot server on http://127.0.0.1:${options.port}; start one with \`jlfbot serve\` or set JLFBOT_PORT`);
+    console.error(`no ASLBot server on http://127.0.0.1:${options.port}; start one with \`jlfbot serve\` or set JLFBOT_PORT`);
     return 1;
   }
   if (process.stdin.isTTY && process.stdout.isTTY && !options.label && !options.client) {
@@ -578,7 +578,7 @@ export async function runPair(options: CliOptions): Promise<number> {
 
 export async function runSessions(options: CliOptions): Promise<number> {
   if (!(await serverUp(options.port))) {
-    console.error(`no JLFBot server on http://127.0.0.1:${options.port}`);
+    console.error(`no ASLBot server on http://127.0.0.1:${options.port}`);
     return 1;
   }
   if (options.revoke) {
@@ -633,9 +633,9 @@ export async function runStatus(options: CliOptions, io: CliIo = defaultIo()): P
   try {
     const res = await fetch(`http://127.0.0.1:${options.port}/.well-known/jlfbot/environment`);
     const body: any = await res.json();
-    io.log(options.json ? JSON.stringify(body, null, 2) : `${body.label} · JLFBot ${body.version} on ${body.platform} · id ${body.environmentId}`);
+    io.log(options.json ? JSON.stringify(body, null, 2) : `${body.label} · ASLBot ${body.version} on ${body.platform} · id ${body.environmentId}`);
   } catch {
-    io.error(`no JLFBot server on http://127.0.0.1:${options.port}`);
+    io.error(`no ASLBot server on http://127.0.0.1:${options.port}`);
     code = 1;
   }
   if (!options.json) {
@@ -731,7 +731,7 @@ export async function runLogin(options: CliOptions, io: CliIo = defaultIo()): Pr
   }
   const existing = describeTunnelAccount(account.credentials.read());
   if (existing.address) io.log(`already signed in as ${existing.email ?? "?"} (${existing.address}); signing in again refreshes it`);
-  const email = (options.email ?? (await io.ask("Email for your JLFBot account: "))).trim();
+  const email = (options.email ?? (await io.ask("Email for your ASLBot account: "))).trim();
   if (!email) {
     io.error("an email address is needed: jlfbot login --email you@example.com");
     return 1;
@@ -1026,12 +1026,12 @@ export async function runServe(options: CliOptions, log: (line: string) => void 
       await new Promise((r) => setTimeout(r, 250));
     }
     if (exited !== null) {
-      if (exited !== 0) log(`JLFBot could not start.${logPath ? ` Details: ${logPath}` : " See the output above."}`);
+      if (exited !== 0) log(`ASLBot could not start.${logPath ? ` Details: ${logPath}` : " See the output above."}`);
       return exited;
     }
     if (stopping) return await childExit;
     if (!(await serverUp(options.port, child.pid))) {
-      console.error(`JLFBot did not become ready within a minute.${logPath ? ` Details: ${logPath}` : " See its output above."}`);
+      console.error(`ASLBot did not become ready within a minute.${logPath ? ` Details: ${logPath}` : " See its output above."}`);
       await stop();
       return 1;
     }
@@ -1061,7 +1061,7 @@ export async function runServe(options: CliOptions, log: (line: string) => void 
       tunnel.started.catch((error: unknown) => log(`tunnel: ${message(error)}`));
     }
     log("");
-    log(`JLFBot is running on http://127.0.0.1:${options.port}${publicUrl ? `, reachable at ${publicUrl}` : ""}`);
+    log(`ASLBot is running on http://127.0.0.1:${options.port}${publicUrl ? `, reachable at ${publicUrl}` : ""}`);
     if (options.guided) {
       log("Your bots and conversations are saved automatically.");
       log(`Details if you need help: ${logPath}`);
@@ -1160,7 +1160,7 @@ export async function runOnboardingCommand(
     }
     if (options.command === "setup") {
       io.log("\nAll set. Start with: jlfbot (or npx jlfbot without a global install).");
-      if (options.dataDir !== defaultDataDir(homedir()) || options.port !== 8799) {
+      if (options.dataDir !== defaultDataDir(homedir()) || options.port !== 8899) {
         io.log(`Use the same --data-dir (${options.dataDir}) and --port (${options.port}) options when starting.`);
       }
       return 0;

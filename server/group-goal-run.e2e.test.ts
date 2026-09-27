@@ -57,7 +57,7 @@ beforeAll(async () => {
   queueFinishGate = join(home, "queue-finish");
   stopScopedLeadFinishGate = join(home, "stop-scoped-lead-finish");
   writeFileSync(stopScopedLeadFinishGate, "allow initial goal delegation");
-  const data = join(home, ".jlfbot");
+  const data = join(home, ".aslbot");
   const staticDir = join(home, "static");
   mkdirSync(data, { recursive: true });
   mkdirSync(join(staticDir, "assets"), { recursive: true });

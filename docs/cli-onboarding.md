@@ -1,6 +1,6 @@
 # Terminal setup
 
-Install [Node.js](https://nodejs.org/) 24 or newer, then choose either way to run JLFBot:
+Install [Node.js](https://nodejs.org/) 24 or newer, then choose either way to run ASLBot:
 
 ```sh
 # Install once, then use the short command:
@@ -14,7 +14,7 @@ Or, without a global install:
 npx jlfbot
 ```
 
-Use the same command next time. The first launch guides you through setup; later launches reuse your saved AI connection and phone-access choice. `jlfbot start` is the same as the bare command. If that workspace is already running, JLFBot opens it instead of starting a second server.
+Use the same command next time. The first launch guides you through setup; later launches reuse your saved AI connection and phone-access choice. `jlfbot start` is the same as the bare command. If that workspace is already running, ASLBot opens it instead of starting a second server.
 
 ## First launch
 
@@ -37,14 +37,14 @@ A phone cannot connect to this computer's `localhost` address. The harness also 
 
 Choose one connection method:
 
-- **Managed HTTPS address:** setup asks explicit permission for a public endpoint through Cloudflare and a possible connector download. Device pairing protects chat and settings; the pairing page and basic server identity remain publicly reachable. Sign in to an **JLFBot account** using an emailed code, or reuse this machine's saved account. This account is separate from ChatGPT, Claude, or an API-provider account. The connection stays active while JLFBot runs.
+- **Managed HTTPS address:** setup asks explicit permission for a public endpoint through Cloudflare and a possible connector download. Device pairing protects chat and settings; the pairing page and basic server identity remain publicly reachable. Sign in to an **ASLBot account** using an emailed code, or reuse this machine's saved account. This account is separate from ChatGPT, Claude, or an API-provider account. The connection stays active while ASLBot runs.
 - **Existing Tailscale:** both computer and phone must already be signed in to the same tailnet, with HTTPS certificates enabled. Setup asks before enabling HTTPS serving to that tailnet; it does not install or sign in to Tailscale for you.
 - **Existing HTTPS address (advanced):** supply the origin of a reverse proxy you already configured, such as `https://jlf.example.com`. Do not paste a password, path, query, or pairing code. Entering an address does not create the proxy or open a LAN listener.
 
 After the connection is ready:
 
-- **iPhone/iPad:** scan the QR with Camera to open Safari. If you already have the JLFBot iOS app, use its pairing scanner or paste the full link there.
-- **Android:** the QR is an app link, so scan it inside the JLFBot app. To use a browser instead, open the web address printed above it and type the code.
+- **iPhone/iPad:** scan the QR with Camera to open Safari. If you already have the ASLBot iOS app, use its pairing scanner or paste the full link there.
+- **Android:** the QR is an app link, so scan it inside the ASLBot app. To use a browser instead, open the web address printed above it and type the code.
 
 Choose **Connect** on the phone. Scanning alone is not a successful pairing. The code is private, single-use, and expires after five minutes. Guided phone pairing grants client access for chat and approvals, not settings or pairing administration.
 
@@ -64,7 +64,7 @@ The examples below assume a global install; prefix them with `npx` otherwise.
 | `jlfbot pair` | Create another phone invitation while the configured workspace and HTTPS connection are running. |
 | `jlfbot sessions` | List paired devices; `jlfbot sessions revoke ID` signs one out. |
 | `jlfbot serve` | Start without onboarding prompts or automatic browser opening; specify remote-access flags explicitly for a service. |
-| `jlfbot login` | Sign in to an JLFBot account for `--tunnel`; this does not sign in to an AI provider or start the tunnel. |
+| `jlfbot login` | Sign in to an ASLBot account for `--tunnel`; this does not sign in to an AI provider or start the tunnel. |
 
 `start` accepts the same server options as `serve`, including `--port`, `--data-dir`, `--tailscale`, `--tunnel`, and `--public-url`. Keep using your custom data directory and port when starting or pairing:
 

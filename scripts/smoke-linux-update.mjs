@@ -69,12 +69,12 @@ async function main() {
   mkdirSync(applications);
 
   // The bug shape: a version in the filename, and a launcher pinned to it.
-  const launched = path.join(installDir, "JLFBot-0.0.1-x86_64.AppImage");
+  const launched = path.join(installDir, "ASLBot-0.0.1-x86_64.AppImage");
   copyFileSync(packaged, launched);
   const desktopEntry = path.join(applications, "com.jlfbot.app.desktop");
   writeFileSync(
     desktopEntry,
-    `[Desktop Entry]\nName=JLFBot\nExec=${launched} %U\nType=Application\n`,
+    `[Desktop Entry]\nName=ASLBot\nExec=${launched} %U\nType=Application\n`,
   );
 
   // Isolate every path the updater writes to.

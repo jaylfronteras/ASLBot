@@ -7,23 +7,23 @@ import { RenameTitle } from "./RenameTitle";
 describe("RenameTitle", () => {
   it("does not expose an inert profile button when onActivate is absent", () => {
     const markup = renderToStaticMarkup(createElement(RenameTitle, {
-      value: "JLFBot",
+      value: "ASLBot",
       onCommit: vi.fn(),
       showEditButton: true,
     }));
 
-    expect(markup).not.toContain("Open JLFBot&#x27;s profile");
-    expect(markup).toContain('aria-label="Rename JLFBot"');
+    expect(markup).not.toContain("Open ASLBot&#x27;s profile");
+    expect(markup).toContain('aria-label="Rename ASLBot"');
   });
 
   it("exposes the profile button when onActivate is provided", () => {
     const markup = renderToStaticMarkup(createElement(RenameTitle, {
-      value: "JLFBot",
+      value: "ASLBot",
       onCommit: vi.fn(),
       onActivate: vi.fn(),
       showEditButton: true,
     }));
 
-    expect(markup).toContain("Open JLFBot&#x27;s profile");
+    expect(markup).toContain("Open ASLBot&#x27;s profile");
   });
 });

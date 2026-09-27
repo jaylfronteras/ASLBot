@@ -147,7 +147,7 @@ if (existsSync(join(root, "enterprise", "server", "index.ts"))) {
   copyFileSync(join(root, "enterprise", "LICENSE"), join(root, "dist-server", "enterprise", "LICENSE"));
 }
 
-// pi-mcp-extension.ts is NOT an JLFBot entry point: it is loaded by the
+// pi-mcp-extension.ts is NOT an ASLBot entry point: it is loaded by the
 // external `pi` process (pi's own jiti), which resolves its
 // @earendil-works/pi-coding-agent and typebox imports from pi's install. Ship
 // it verbatim as .ts so the packaged app has it too — never bundle it, or

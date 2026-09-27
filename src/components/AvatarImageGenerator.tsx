@@ -175,7 +175,7 @@ export function AvatarImageGenerator({
             />
           </label>
           <p className="text-[11px] leading-relaxed text-ink-secondary">
-            OpenAI-compatible Images API. localhost refers to the JLFBot server, including when you open this page remotely.
+            OpenAI-compatible Images API. localhost refers to the ASLBot server, including when you open this page remotely.
           </p>
         </>
       )}

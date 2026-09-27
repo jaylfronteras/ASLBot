@@ -9,8 +9,10 @@ import {
   Copy,
   Crown,
   MessageSquareReply,
+  ListChecks,
   Monitor,
   Pencil,
+  Settings,
   Pin,
   PinOff,
   RefreshCw,
@@ -68,6 +70,7 @@ import { CompactionChip, DigestChip } from "./DigestChip";
 import { RenameTitle } from "./RenameTitle";
 import { BotActivityPicker, TaskPicker } from "./TaskPicker";
 import { useSimpleMode } from "@/lib/simple-mode";
+import { openSidePanel } from "@/lib/side-panel";
 import { ModelPicker } from "./ModelPicker";
 import { ExportTranscriptMenu } from "./ExportTranscriptMenu";
 
@@ -1261,11 +1264,33 @@ export function ChatView({ bot: profile }: { bot: Bot }) {
               <span className="@max-4xl/chathead:hidden">{t("chat.stop")}</span>
             </button>
           )}
-          <TaskPicker bot={bot} />
-          <UsageChip bot={bot} />
-          {!remoteClient && <ModelPicker key={bot.threadId} bot={bot} threadId={bot.threadId} />}
-          <CallButton bot={bot} />
-          <button
+          {!simpleMode && <TaskPicker bot={bot} />}
+          {!simpleMode && <UsageChip bot={bot} />}
+          {!simpleMode && !remoteClient && <ModelPicker key={bot.threadId} bot={bot} threadId={bot.threadId} />}
+          {!simpleMode && <CallButton bot={bot} />}
+          {simpleMode && !remoteClient && (
+            <button
+              type="button"
+              onClick={() => openSidePanel("settings")}
+              aria-label="Bot settings"
+              className="rounded-md p-1.5 text-ink-secondary hover:bg-raised hover:text-ink"
+              title="Settings"
+            >
+              <Settings size={18} />
+            </button>
+          )}
+          {simpleMode && (
+            <button
+              type="button"
+              onClick={() => openSidePanel("routines")}
+              aria-label="Routines"
+              className="rounded-md p-1.5 text-ink-secondary hover:bg-raised hover:text-ink"
+              title="Routines"
+            >
+              <ListChecks size={18} />
+            </button>
+          )}
+          {!simpleMode && <button
             data-tour="computer"
             onClick={() => dispatch({ type: "toggleComputer" })}
             className={cn(
@@ -1275,8 +1300,8 @@ export function ChatView({ bot: profile }: { bot: Bot }) {
             title={t("chat.computer")}
           >
             <Monitor size={18} />
-          </button>
-          {!remoteClient && <button
+          </button>}
+          {!simpleMode && !remoteClient && <button
             onClick={() => dispatch({ type: "toggleInspector" })}
             aria-label={t("chat.inspector")}
             aria-pressed={state.inspectorOpen}

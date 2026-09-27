@@ -15,6 +15,9 @@ import { RemoteAgentSettingsPanel } from "@/components/RemoteAgentSettingsPanel"
 import { NewBotDialog } from "@/components/NewBotDialog";
 import { PluginsPanel, preloadConnectedApps } from "@/components/PluginsPanel";
 import { ComputerPanel } from "@/components/ComputerPanel";
+import { BotSidePanel } from "@/components/BotSidePanel";
+import { useSimpleMode } from "@/lib/simple-mode";
+import { closeSidePanel } from "@/lib/side-panel";
 import { RemoteDesktopPanel } from "@/components/remote-desktop-panel";
 import { InspectorPanel } from "@/components/InspectorPanel";
 import { SettingsModal } from "@/components/SettingsModal";
@@ -88,9 +91,12 @@ function Shell() {
   // count — that CLI can still host a local model. Wait for the first
   // /api/instances response before deciding: an empty list means "not asked
   // yet", and flashing the setup screen at every launch would be worse.
+  const simpleMode = useSimpleMode();
+  // An empty product fleet is a setup state, not "still loading". Wait for
+  // the first /api/instances response so a cold start does not flash it.
   const noEngines =
     state.connected &&
-    state.instances.length > 0 &&
+    state.instancesLoaded &&
     !state.instances.some((i) => i.snapshot.state === "available");
 
   // App-wide shortcuts: ⌘N new bot · ⌘1–9 jump to bot · ⌘⇧[ / ⌘⇧] prev/next · ⌘/ or ? shortcuts cheat sheet.
@@ -150,6 +156,10 @@ function Shell() {
   useEffect(() => {
     setDrawerOpen(false);
   }, [state.selectedId, bot?.threadId, group?.threadId, state.activeView, state.pluginsOpen, state.settingsOpen]);
+
+  useEffect(() => {
+    closeSidePanel();
+  }, [state.selectedId]);
 
   useEffect(() => {
     if (state.activeView === "routines" && previousViewRef.current !== "routines") {
@@ -301,7 +311,8 @@ function Shell() {
           ? <RemoteAgentSettingsPanel bot={bot} />
           : <BotSettingsDialog key={`settings:${bot.id}`} bot={bot} />
       )}
-      {state.computerOpen && bot && (
+      {simpleMode && bot && !group && state.activeView === "chat" && <BotSidePanel bot={bot} />}
+      {!simpleMode && state.computerOpen && bot && (
         remoteClient ? (
           <RemoteDesktopPanel key={`computer:${bot.id}`} bot={bot} />
         ) : (

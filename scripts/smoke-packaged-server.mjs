@@ -60,7 +60,7 @@ const fixtureEnv = {
   XDG_CONFIG_HOME: join(home, ".config"),
   XDG_CACHE_HOME: join(home, ".cache"),
   XDG_DATA_HOME: join(home, ".local", "share"),
-  JLFBOT_DATA_DIR: join(home, ".jlfbot"),
+  JLFBOT_DATA_DIR: join(home, ".aslbot"),
   JLFBOT_PORT: String(port),
   // Not a genuine key: enough to make the server look for its enterprise
   // layer and say whether it found one (checked below), never enough to

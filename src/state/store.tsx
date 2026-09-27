@@ -812,6 +812,8 @@ export interface AppState {
   /** Persisted named teams; older servers omit this, so clients also derive labels. */
   sections?: string[];
   instances: InstanceInfo[];
+  /** True after the first /api/instances response, including an empty fleet. */
+  instancesLoaded: boolean;
   /** Session discoveries stay with their conversation and never enter persisted settings. */
   modelVariantSessions: Record<string, ModelVariantSession>;
   config: ConfigStatus | null;
@@ -1483,7 +1485,7 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, groups, selectedId };
     }
     case "instances":
-      return { ...state, instances: action.instances };
+      return { ...state, instances: action.instances, instancesLoaded: true };
     case "configStatus":
       return { ...state, config: action.config };
     case "select": {
@@ -2212,6 +2214,7 @@ export const initialState: AppState = {
   groups: [],
   sections: [],
   instances: [],
+  instancesLoaded: false,
   config: null,
   selectedId: "",
   activeView: "chat",

@@ -15,7 +15,7 @@ const legacyNameFor = (botId: string) => {
   return `ogb-${prefix}-${hash}`;
 };
 
-describe("JLFBot-managed Box inventory", () => {
+describe("ASLBot-managed Box inventory", () => {
   let api: Server;
   let boxes: ProviderBox[] = [];
   let listStatus = 200;
@@ -278,7 +278,7 @@ describe("JLFBot-managed Box inventory", () => {
     const inventory = await box.listManagedBoxes(cfg, [{ botId, name: "Conflict", inUse: false }]);
 
     expect(inventory).toMatchObject({ available: false, instances: [] });
-    expect(inventory.problem).toMatch(/no longer has its JLFBot owner name/i);
+    expect(inventory.problem).toMatch(/no longer has its ASLBot owner name/i);
     expect(journal.boxCreateRecoverySnapshot()).toContainEqual({ botId, boxId, resolved: true });
     expect(requests.map(({ method, path }) => `${method} ${path}`)).toEqual([
       "GET /api/box/v1/boxes",

@@ -1,7 +1,7 @@
-// Config + data dirs. One file, ~/.jlfbot/config.json, env fallbacks:
+// Config + data dirs. One file, ~/.aslbot/config.json, env fallbacks:
 //   { "xai": {"key":"xai-…"}, "composio": {"apiKey":"ak_…"}, "box": {"token":"…"},
 //     "instances": { "<instanceId>": {"driver":"grok", …} } }
-import { readFileSync, mkdirSync, existsSync, renameSync } from "node:fs";
+import { readFileSync, mkdirSync, existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { z } from "zod";
@@ -9,6 +9,7 @@ import { normalizeImageGenerationUrl, type ImageGenerationConfig } from "../shar
 
 import { writeFileAtomic } from "./atomic.ts";
 import { defaultDataDir } from "./data-dir.ts";
+import { legacyTestEngines } from "./product-mode.ts";
 import { EFFORT_LEVELS } from "../shared/wire.ts";
 import { isModelVariant, type InstanceConfigMap, type ModelSelection } from "./contracts.ts";
 import { PROVIDER_ICON_PRESETS, providerIconError } from "../shared/provider-icon.ts";
@@ -698,7 +699,7 @@ export function builtInBrowserEnabled(cfg: AppConfig): boolean {
  *
  * Deliberately NOT a Settings toggle: this is a maintainer-only escape hatch
  * for an unfinished feature, not a user preference. Someone who needs it
- * enables it by hand in `~/.jlfbot/config.json`
+ * enables it by hand in `~/.aslbot/config.json`
  * (`{"features": {"sharedComputers": true}}`) and restarts the server. */
 export function sharedComputersEnabled(cfg: AppConfig): boolean {
   return cfg.features?.sharedComputers === true;
@@ -715,7 +716,7 @@ export function claudeUserMcpEnabled(cfg: AppConfig): boolean {
 
 /** Opt-in generated titles for new bot threads: a cheap provider one-shot
  * names the row instead of the first-message snippet. Off until enabled by
- * hand in ~/.jlfbot/config.json
+ * hand in ~/.aslbot/config.json
  * (`{"features": {"llmThreadTitles": true}}`); a one-shot that fails or
  * answers anything unusable leaves the snippet untouched. */
 export function llmThreadTitlesEnabled(cfg: AppConfig): boolean {
@@ -747,22 +748,22 @@ export function providerReloadKeys(patch: object): string[] {
   return Object.keys(patch).filter((key) => !FLEET_NEUTRAL_KEYS.has(key));
 }
 
-// JLFBOT_DATA_DIR isolates test/soak rigs from the user's real fleet.
+// ASLBOT_* is the name users set. JLFBOT_* remains so the inherited suite and
+// older launch scripts keep working. An explicit JLFBOT_* value wins.
+for (const [key, value] of Object.entries(process.env)) {
+  if (!key.startsWith("ASLBOT_") || value === undefined) continue;
+  const legacy = `JLFBOT_${key.slice("ASLBOT_".length)}`;
+  if (process.env[legacy] === undefined) process.env[legacy] = value;
+}
+
+// JLFBOT_DATA_DIR / ASLBOT_DATA_DIR isolate test rigs from the real fleet.
 export const DATA_DIR = process.env.JLFBOT_DATA_DIR ?? defaultDataDir(homedir());
-const LEGACY_DATA_DIR = join(homedir(), ".opengrokbot");
 export const EVENTS_DIR = join(DATA_DIR, "events");
 export const NATIVE_DIR = join(DATA_DIR, "native");
 
 export function ensureDirs() {
-  // one-time migration from the pre-rename data dir — bots, transcripts,
-  // config and keys all carry over
-  if (!existsSync(DATA_DIR) && existsSync(LEGACY_DATA_DIR)) {
-    try {
-      renameSync(LEGACY_DATA_DIR, DATA_DIR);
-    } catch {
-      /* cross-device or busy — fall through to a fresh dir */
-    }
-  }
+  // ASLBot never adopts ~/.jlfbot, ~/.openmausbot, or ~/.opengrokbot. Those
+  // belong to other apps and must keep working beside this one.
   for (const dir of [DATA_DIR, EVENTS_DIR, NATIVE_DIR]) mkdirSync(dir, { recursive: true });
   migrateLegacyFeatureFlags();
 }
@@ -969,7 +970,7 @@ export function onConfigSaved(listener: (before: JsonObject, after: JsonObject) 
   return () => { configSaveListeners.delete(listener); };
 }
 
-/** Merge a partial config into ~/.jlfbot/config.json (secrets never
+/** Merge a partial config into ~/.aslbot/config.json (secrets never
  * echoed back — callers report configured-or-not booleans only). */
 export function saveConfig(
   patch: Partial<Omit<AppConfig, "threads">> & { threads?: z.output<typeof threadsPatchSchema> },
@@ -1189,7 +1190,9 @@ export function instanceConfigs(cfg: AppConfig): InstanceConfigMap {
   // CLI"), so a default `gemini` instance could only ever show unavailable.
   // The driver stays registered for enterprise licences, which keep Gemini
   // CLI — `{"instances": {"gemini": {"driver": "geminiAgent"}}}` restores it.
-  const DEFAULT_FLEET: InstanceConfigMap = {
+  // The inherited suite still expects the old automatic fleet. ASLBot itself
+  // starts with no providers and never re-adds CLI engines or a computer.
+  const LEGACY_DEFAULT_FLEET: InstanceConfigMap = {
     grok: { driver: "grokAgent" },
     kimi: { driver: "kimiAgent" },
     droid: { driver: "droidAgent" },
@@ -1204,29 +1207,33 @@ export function instanceConfigs(cfg: AppConfig): InstanceConfigMap {
     hermes: { driver: "hermesAgent" },
     pi: { driver: "piAgent" },
   };
+  const DEFAULT_FLEET: InstanceConfigMap = legacyTestEngines() ? LEGACY_DEFAULT_FLEET : {};
   const CUSTOM_ONLY = {
     qwen: { driver: "qwenAgent" },
     hermes: { driver: "hermesAgent" },
     pi: { driver: "piAgent" },
   } as const;
-  // New default-fleet engines that existing product configs would otherwise
-  // never see. Custom-only engines stay in CUSTOM_ONLY so a one-off test map
-  // is not expanded, matching the claude/grok/codex product-fleet probe.
-  const PRODUCT_FLEET_ADDITIONS = {
-    cursor: { driver: "cursorAgent" },
-    openaiCompat: { driver: "openai-compat" },
-    ...CUSTOM_ONLY,
-  } as const;
+  const PRODUCT_FLEET_ADDITIONS: InstanceConfigMap = legacyTestEngines()
+    ? {
+        cursor: { driver: "cursorAgent" },
+        openaiCompat: { driver: "openai-compat" },
+        ...CUSTOM_ONLY,
+      }
+    : {};
   const configured = cfg.instances && Object.keys(cfg.instances).length ? cfg.instances : null;
   const map: InstanceConfigMap = configured ? { ...configured } : { ...DEFAULT_FLEET };
-  // Product fleets pick up newly shipped engines. A one-off test/shadow map
-  // (no claude/grok/codex) is left exactly as written.
   if (
+    legacyTestEngines() &&
     configured &&
     (Object.hasOwn(configured, "claude") || Object.hasOwn(configured, "grok") || Object.hasOwn(configured, "codex"))
   ) {
     for (const [id, entry] of Object.entries(PRODUCT_FLEET_ADDITIONS)) {
       if (!Object.hasOwn(map, id)) map[id] = { ...entry };
+    }
+  }
+  if (!legacyTestEngines()) {
+    for (const [id, entry] of Object.entries(map)) {
+      if (entry.driver !== "openai-compat") delete map[id];
     }
   }
   for (const [id, sourceEntry] of Object.entries(map)) {

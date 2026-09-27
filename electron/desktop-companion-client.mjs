@@ -48,7 +48,7 @@ const cleanLabel = (value, fallback) => {
   return label || fallback;
 };
 
-/** Pairing tokens may travel through a verified JLFBot HTTPS endpoint or
+/** Pairing tokens may travel through a verified ASLBot HTTPS endpoint or
  * an explicit Tailscale MagicDNS name. WireGuard protects cleartext HTTP on
  * the latter; accepting LAN IPs there would silently turn the long-lived
  * bearer into plaintext Wi-Fi traffic. */
@@ -131,7 +131,7 @@ export async function pairDesktopCompanion({
 }) {
   const endpoint = normalizeDesktopCompanionEndpoint(rawEndpoint);
   if (!endpoint) {
-    throw new Error("Enter the JLFBot HTTPS companion address or full Tailscale name ending in .ts.net");
+    throw new Error("Enter the ASLBot HTTPS companion address or full Tailscale name ending in .ts.net");
   }
   const code = String(rawCode ?? "").trim();
   if (!PAIRING_CODE.test(code)) throw new Error("Enter the six-digit code shown on the other computer");

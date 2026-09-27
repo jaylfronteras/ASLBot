@@ -1,4 +1,4 @@
-# JLFBot documentation
+# ASLBot documentation
 
 The public documentation site is a Next.js 16 + Fumadocs app. User-facing content lives in `content/docs`; the repository's top-level `docs` folder remains available for implementation notes and detailed platform records.
 
@@ -21,7 +21,7 @@ pnpm --filter @jlfbot/docs types:check
 pnpm --filter @jlfbot/docs lint
 ```
 
-The changelog reads published releases from `jaylfronteras/JLFBot` plus the
+The changelog reads published releases from `jaylfronteras/ASLBot` plus the
 legacy updater archive, deduplicates them into one complete history, and caches
 the result for five minutes. If one repository is temporarily unavailable, the
 other still renders; if both fail, the page links directly to GitHub.
@@ -34,7 +34,7 @@ incremental regeneration so published releases appear without a source commit.
 
 Create a second Vercel project beside the existing `jlfbot.example.com` project:
 
-1. Import the `jaylfronteras/JLFBot` repository.
+1. Import the `jaylfronteras/ASLBot` repository.
 2. Set **Root Directory** to `apps/docs`.
 3. Keep the detected **Next.js** framework settings.
 4. Set the production branch to `main` and deploy.

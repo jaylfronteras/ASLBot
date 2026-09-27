@@ -76,7 +76,7 @@ export async function pollServerIdentity({
     const identified =
       res.ok &&
       expectedPid !== undefined &&
-      body?.app === "jlfbot" &&
+      body?.app === "aslbot" &&
       body.pid === expectedPid &&
       body.static;
     if (!identified) return { outcome: "foreign-owner" };

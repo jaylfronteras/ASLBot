@@ -54,7 +54,7 @@ describe("Settings → General", () => {
     setLocale("en");
     const en = await renderSettings();
     expect(en).toContain("Settings");
-    expect(en).toContain("Engines");
+    expect(en).toContain("Providers");
     expect(en).toContain("Maximum turn length");
   });
 

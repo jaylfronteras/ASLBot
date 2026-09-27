@@ -63,11 +63,11 @@ targets:
       path: App/Info.plist
       properties:
         # What appears under the icon. This MUST stay close to the App Store
-        # listing name ("JLFBot") or review rejects the build under
-        # guideline 2.3.8: a person who installs "JLFBot" has to be able to
-        # find it on the home screen. The desktop app is "JLFBot", which
+        # listing name ("ASLBot") or review rejects the build under
+        # guideline 2.3.8: a person who installs "ASLBot" has to be able to
+        # find it on the home screen. The desktop app is "ASLBot", which
         # is near enough to read as the same family and still tell them apart.
-        CFBundleDisplayName: JLFBot
+        CFBundleDisplayName: ASLBot
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSApplicationCategoryType: public.app-category.productivity
@@ -102,10 +102,10 @@ targets:
         # It looks exactly like "no computers on this network", which is a
         # confusing hour if you don't know to look here.
         NSLocalNetworkUsageDescription: >-
-          JLFBot finds your computer on this network so your bots can
+          ASLBot finds your computer on this network so your bots can
           reach you here.
         NSCameraUsageDescription: >-
-          JLFBot uses the camera only to scan a pairing QR code shown on
+          ASLBot uses the camera only to scan a pairing QR code shown on
           your computer.
         NSMicrophoneUsageDescription: >-
           JLFBotMobile listens while you dictate a message to a bot.
@@ -181,7 +181,7 @@ targets:
     info:
       path: ShareExtension/Info.plist
       properties:
-        CFBundleDisplayName: JLFBot
+        CFBundleDisplayName: ASLBot
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         JLFBotKeychainAccessGroup: $(AppIdentifierPrefix)group.com.jlfbot.shared
@@ -233,7 +233,7 @@ targets:
     info:
       path: Widgets/Info.plist
       properties:
-        CFBundleDisplayName: JLFBot
+        CFBundleDisplayName: ASLBot
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSExtension:

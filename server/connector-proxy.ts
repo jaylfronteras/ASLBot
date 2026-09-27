@@ -2,7 +2,7 @@
 //
 // Provider CLIs only see this stdio server. Ordinary MCP traffic is relayed
 // to the configured Composio Session, but connection requests are converted
-// into first-class JLFBot chat cards. The agent never authors an auth
+// into first-class ASLBot chat cards. The agent never authors an auth
 // URL and credentials never pass through its transcript.
 //
 // stdout is the MCP transport. Never log there.
@@ -204,12 +204,12 @@ async function handle(message: Json): Promise<void> {
       const labels = requests.map((r) => (r.alias ? `${r.slug} (${r.alias})` : r.slug)).join(", ");
       send(textResult(
         id,
-        `JLFBot showed the user a secure connection card for ${labels}. End this turn now. The app will continue the task automatically after the connection finishes.`,
+        `ASLBot showed the user a secure connection card for ${labels}. End this turn now. The app will continue the task automatically after the connection finishes.`,
       ));
       return;
     }
     if (/WAIT_FOR_CONNECTIONS$/i.test(name)) {
-      send(textResult(id, "JLFBot is handling connection completion and will continue the task automatically."));
+      send(textResult(id, "ASLBot is handling connection completion and will continue the task automatically."));
       return;
     }
   }

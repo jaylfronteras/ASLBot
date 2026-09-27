@@ -27,11 +27,11 @@ afterEach(() => {
 describe("scoutProject", () => {
   it("names the project from the README and summarizes its first paragraph", () => {
     const dir = project({
-      "README.md": "[![ci](x)](y)\n# JLFBot Tracker\n\nTracks every jlf in the house.\n\nMore prose.",
+      "README.md": "[![ci](x)](y)\n# ASLBot Tracker\n\nTracks every jlf in the house.\n\nMore prose.",
       "package.json": JSON.stringify({ name: "not-this", description: "not this either" }),
     });
     const profile = scoutProject(dir);
-    expect(profile.name).toBe("JLFBot Tracker");
+    expect(profile.name).toBe("ASLBot Tracker");
     expect(profile.summary).toBe("Tracks every jlf in the house.");
   });
 
@@ -86,7 +86,7 @@ describe("scoutProject", () => {
 
 describe("suggestTeam", () => {
   const profile: ProjectProfile = {
-    name: "JLFBot Tracker",
+    name: "ASLBot Tracker",
     summary: "Tracks every jlf in the house.",
     stacks: ["TypeScript", "React"],
     signals: [
@@ -97,12 +97,12 @@ describe("suggestTeam", () => {
 
   it("always leads with a lead, then one member per signal, each with a reason", () => {
     const suggestion = suggestTeam(profile);
-    expect(suggestion.roomName).toBe("JLFBot Tracker");
+    expect(suggestion.roomName).toBe("ASLBot Tracker");
     expect(suggestion.manifest.team.members.map((member) => member.key)).toEqual(["lead", "frontend", "testing"]);
     expect(suggestion.reasons.frontend).toContain("react");
     expect(suggestion.manifest.team.description).toBe(profile.summary);
     const frontend = suggestion.manifest.team.members[1]!;
-    expect(frontend.description).toContain("JLFBot Tracker");
+    expect(frontend.description).toContain("ASLBot Tracker");
     expect(frontend.description).toContain("react, vite");
   });
 

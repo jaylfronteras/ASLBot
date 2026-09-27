@@ -8,6 +8,7 @@
 import { useEffect, useState } from "react";
 import { emailGateDone } from "@/lib/analytics";
 import { hostedMember, LOCAL_VIEWER, welcomeDue, welcomeViewer, type BeatId, type WelcomeViewer } from "@/lib/onboarding";
+import { useSimpleMode } from "@/lib/simple-mode";
 import { api, useStore } from "@/state/store";
 import { SharedWorkspaceHint } from "./SharedWorkspaceHint";
 import { WelcomeFlow } from "./WelcomeFlow";
@@ -48,11 +49,15 @@ export function useWelcomeViewer(): WelcomeViewer | null {
  * config to arrive, so a returning user never sees the tour flash. */
 export function WelcomeGate({ viewer }: { viewer: WelcomeViewer | null }) {
   const { state, dispatch } = useStore();
+  const simpleMode = useSimpleMode();
   const [dismissed, setDismissed] = useState(false);
   // Set when the engines beat's organisation row opened Settings, so closing
   // Settings brings the person back to that beat rather than the greeting.
   const [resumeAt, setResumeAt] = useState<BeatId | undefined>(undefined);
   const remoteClient = window.ogb?.remoteClient?.active === true;
+  // ASLBot's only layout is the simple one. The inherited welcome tour
+  // talks about computers and CLI engines, so it stays off.
+  if (simpleMode) return null;
   if (!viewer) return null;
   // Only a hosted workspace is a team's by definition. Elsewhere a session
   // without admin scope is often the owner's own phone or browser, so it

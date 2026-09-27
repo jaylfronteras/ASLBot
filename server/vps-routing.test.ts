@@ -175,7 +175,7 @@ posixOnly("VPS turn routing e2e (fake ACP fleet + fake docker over SSH)", () => 
   beforeAll(async () => {
     chmodSync(FAKE_CLI, 0o755);
     home = mkdtempSync(join(tmpdir(), "jlfbot-vps-routing-"));
-    mkdirSync(join(home, ".jlfbot"), { recursive: true });
+    mkdirSync(join(home, ".aslbot"), { recursive: true });
     const fakeBin = join(home, "fakebin");
     mkdirSync(fakeBin, { recursive: true });
     gateFile = join(home, "turn.gate");
@@ -204,7 +204,7 @@ createServer(socket => socket.end()).listen(port, '127.0.0.1');
     writeFileSync(dockerLog, "");
 
     writeFileSync(
-      join(home, ".jlfbot", "config.json"),
+      join(home, ".aslbot", "config.json"),
       JSON.stringify({
         instances: {
           vps: {

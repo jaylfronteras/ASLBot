@@ -96,8 +96,8 @@ describe("rendered files", () => {
 
   it("writes the environment, the first config and the sign-in edits the server reads live", () => {
     const workspace: FleetWorkspace = { slug: "acme", host: "acme.agentada.cc", port: 8810, webhookPort: 8811, status: "running", createdAt: "" };
-    expect(instanceEnv({ workspace, dataDir: "/var/lib/jlfbot/acme/.jlfbot", licenseKey: "omb1.k" })).toBe(
-      "JLFBOT_DATA_DIR=/var/lib/jlfbot/acme/.jlfbot\nJLFBOT_PORT=8810\nJLFBOT_WEBHOOK_PORT=8811\nJLFBOT_PUBLIC_URL=https://acme.agentada.cc\nJLFBOT_LICENSE_KEY=omb1.k\n",
+    expect(instanceEnv({ workspace, dataDir: "/var/lib/jlfbot/acme/.aslbot", licenseKey: "omb1.k" })).toBe(
+      "JLFBOT_DATA_DIR=/var/lib/jlfbot/acme/.aslbot\nJLFBOT_PORT=8810\nJLFBOT_WEBHOOK_PORT=8811\nJLFBOT_PUBLIC_URL=https://acme.agentada.cc\nJLFBOT_LICENSE_KEY=omb1.k\n",
     );
     expect(JSON.parse(initialConfig({ admins: ["ada@example.test"], members: ["@acme.test"], anthropicKey: "sk-ant-x", monthlyCapUsd: 50 }))).toEqual({
       signIn: { admins: ["ada@example.test"], members: ["@acme.test"] }, anthropic: { key: "sk-ant-x" }, budgets: { monthlyUsd: 50 },
@@ -159,7 +159,7 @@ describe("plans", () => {
       "systemctl enable --now jlfbot@acme.service",
       "systemctl reload caddy",
     ]);
-    const config = plan.steps.find((step) => step.kind === "write" && step.path.endsWith("/acme/.jlfbot/config.json"));
+    const config = plan.steps.find((step) => step.kind === "write" && step.path.endsWith("/acme/.aslbot/config.json"));
     expect(config).toMatchObject({ mode: 0o600, owner: "jlfbot-acme" });
     const env = plan.steps.find((step) => step.kind === "write" && step.path === "/etc/jlfbot/instances/acme.env");
     expect(env).toMatchObject({ mode: 0o600 });
@@ -221,16 +221,16 @@ describe("plans", () => {
 
   it("renders privileged steps but never recommends root writes through tenant paths", () => {
     const lines = describeSteps([
-      { kind: "mkdir", path: "/var/lib/jlfbot/acme/.jlfbot", mode: 0o700, owner: "jlfbot-acme" },
-      { kind: "write", path: "/var/lib/jlfbot/acme/.jlfbot/config.json", content: "secret", mode: 0o600, owner: "jlfbot-acme" },
+      { kind: "mkdir", path: "/var/lib/jlfbot/acme/.aslbot", mode: 0o700, owner: "jlfbot-acme" },
+      { kind: "write", path: "/var/lib/jlfbot/acme/.aslbot/config.json", content: "secret", mode: 0o600, owner: "jlfbot-acme" },
       { kind: "write", path: "/etc/jlfbot/instances/acme.env", content: "JLFBOT_PORT=8810\n", mode: 0o600 },
       { kind: "run", argv: ["useradd", "--comment", "Acme Inc", "jlfbot-acme"], why: "the account" },
       { kind: "append-once", path: "/etc/caddy/Caddyfile", line: "import /etc/caddy/jlfbot.d/*.caddy" },
       { kind: "note", text: "done" },
     ]);
     expect(lines).toEqual([
-      "# Create /var/lib/jlfbot/acme/.jlfbot mode 700 as jlfbot-acme (use fleet --yes; never root chown on tenant paths)",
-      "# Write /var/lib/jlfbot/acme/.jlfbot/config.json mode 600 as jlfbot-acme (use fleet --yes; tenant content omitted)",
+      "# Create /var/lib/jlfbot/acme/.aslbot mode 700 as jlfbot-acme (use fleet --yes; never root chown on tenant paths)",
+      "# Write /var/lib/jlfbot/acme/.aslbot/config.json mode 600 as jlfbot-acme (use fleet --yes; tenant content omitted)",
       "cat > /etc/jlfbot/instances/acme.env <<'JLFBOT_EOF'",
       "JLFBOT_PORT=8810",
       "JLFBOT_EOF",

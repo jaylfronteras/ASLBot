@@ -971,7 +971,7 @@ describe("RoutineManager", () => {
         routineName: "Morning brief",
         status: "failed",
         threadId: "thread-1",
-        error: "JLFBot restarted while this routine was running",
+        error: "ASLBot restarted while this routine was running",
       },
     ]);
   });

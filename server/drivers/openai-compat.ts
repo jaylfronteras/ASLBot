@@ -29,6 +29,8 @@ export interface OpenAICompatConfig {
   managedModels?: string[];
   /** Model ids that accept images. Absent or empty leaves every model text-only. */
   imageModels?: string[];
+  /** When true, every model on this provider accepts images. */
+  vision?: boolean;
 }
 
 const MAX_IMAGE_MODELS = 256;
@@ -67,7 +69,8 @@ export function mergeImageModels(config: Record<string, unknown>, patch: Record<
   return imageModels.length ? { ...rest, imageModels } : rest;
 }
 
-function stampImageModels(options: ModelCatalog["options"], imageModels: readonly string[] | undefined): ModelCatalog["options"] {
+function stampImageModels(options: ModelCatalog["options"], imageModels: readonly string[] | undefined, vision?: boolean): ModelCatalog["options"] {
+  if (vision) return options.map((option) => ({ ...option, images: true }));
   if (!imageModels?.length) return options;
   const ids = new Set(imageModels);
   return options.map((option) => ids.has(option.id) ? { ...option, images: true } : option);
@@ -85,6 +88,7 @@ function isOpenRouterUrl(url: string): boolean {
 function decodeConfig(raw: unknown): OpenAICompatConfig {
   const config = (raw ?? {}) as Record<string, unknown>;
   if (config.tools !== undefined && typeof config.tools !== "boolean") throw new Error("tools must be a boolean");
+  if (config.vision !== undefined && typeof config.vision !== "boolean") throw new Error("vision must be a boolean");
   if (config.managedModels !== undefined && (!Array.isArray(config.managedModels) || !config.managedModels.length || config.managedModels.some(model => typeof model !== "string" || !model.trim()))) throw new Error("Invalid managed models.");
   const imageModels = imageModelIds(config.imageModels);
   const envUrl = process.env.OPENAI_COMPAT_URL;
@@ -106,6 +110,7 @@ function decodeConfig(raw: unknown): OpenAICompatConfig {
       ? config.provider || undefined
       : process.env.OPENAI_COMPAT_PROVIDER || undefined,
     ...(imageModels ? { imageModels } : {}),
+    ...(config.vision === true ? { vision: true } : {}),
   };
 }
 
@@ -120,14 +125,14 @@ export const OpenAICompatDriver: ProviderDriver<OpenAICompatConfig> = {
   install: {
     docsUrl: "https://openrouter.ai/keys",
     signInCommand:
-      "add {\"openaiCompat\":{\"key\":\"sk-or-v1-…\"}} to ~/.jlfbot/config.json (or set OPENAI_COMPAT_API_KEY)",
+      "add {\"openaiCompat\":{\"key\":\"sk-or-v1-…\"}} to ~/.aslbot/config.json (or set OPENAI_COMPAT_API_KEY)",
     command: {
       darwin:
-        "Get a free key at https://openrouter.ai/keys (or https://console.groq.com) then add it to ~/.jlfbot/config.json under openaiCompat.key",
+        "Get a free key at https://openrouter.ai/keys (or https://console.groq.com) then add it to ~/.aslbot/config.json under openaiCompat.key",
       linux:
-        "Get a free key at https://openrouter.ai/keys (or https://console.groq.com) then add it to ~/.jlfbot/config.json under openaiCompat.key",
+        "Get a free key at https://openrouter.ai/keys (or https://console.groq.com) then add it to ~/.aslbot/config.json under openaiCompat.key",
       win32:
-        "Get a free key at https://openrouter.ai/keys (or https://console.groq.com) then add it to %USERPROFILE%\\.jlfbot\\config.json under openaiCompat.key",
+        "Get a free key at https://openrouter.ai/keys (or https://console.groq.com) then add it to %USERPROFILE%\\.aslbot\\config.json under openaiCompat.key",
     },
   },
   decodeConfig,
@@ -152,7 +157,7 @@ export const OpenAICompatDriver: ProviderDriver<OpenAICompatConfig> = {
             : [{ id: config.model, label: config.model, custom: true }, ...DEFAULT_MODELS.options],
         }
       : DEFAULT_MODELS;
-    catalog = { ...catalog, options: stampImageModels(catalog.options, config.imageModels) };
+    catalog = { ...catalog, options: stampImageModels(catalog.options, config.imageModels, config.vision) };
 
     const fetchModels = async () => {
       if (config.managedModels) return;
@@ -181,7 +186,7 @@ export const OpenAICompatDriver: ProviderDriver<OpenAICompatConfig> = {
         if (config.model && !options.some((model) => model.id === config.model)) {
           options.unshift({ id: config.model, label: config.model, custom: true });
         }
-        catalog = { default: config.model ?? options[0].id, options: stampImageModels(options, config.imageModels) };
+        catalog = { default: config.model ?? options[0].id, options: stampImageModels(options, config.imageModels, config.vision) };
       } catch {
         // Catalog refresh is opportunistic; keep the seeded options.
       }

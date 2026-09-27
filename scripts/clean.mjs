@@ -7,7 +7,7 @@ const generatedPaths = [
   "dist-server",
   "release",
   "electron/resources/speech-helper",
-  "electron/resources/JLFBot Speech.app",
+  "electron/resources/ASLBot Speech.app",
 ];
 
 await Promise.all(

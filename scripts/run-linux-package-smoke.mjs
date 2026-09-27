@@ -33,7 +33,7 @@ const executables = [
   path.join(root, "release", appImage),
 ];
 if (process.env.JLFBOT_SMOKE_INSTALLED_DEB === "1") {
-  executables.push("/opt/JLFBot/jlfbot");
+  executables.push("/opt/ASLBot/jlfbot");
 }
 
 for (const executable of executables) {

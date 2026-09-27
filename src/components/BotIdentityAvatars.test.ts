@@ -42,6 +42,10 @@ vi.mock("./DesktopCapabilities", () => ({
   useCaptionChrome: () => ({}),
 }));
 vi.mock("react-dom", async (original) => ({ ...await original<object>(), createPortal: (children: unknown) => children }));
+vi.mock("@/lib/simple-mode", async (importOriginal) => {
+  const original = await importOriginal<typeof import("@/lib/simple-mode")>();
+  return { ...original, useSimpleMode: () => false };
+});
 import { GroupView, RoomToolChip } from "./GroupView";
 import { UsageSection } from "./UsageSection";
 import { TeamMapPage } from "./TeamMapPage";

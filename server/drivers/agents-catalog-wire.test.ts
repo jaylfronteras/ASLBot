@@ -116,7 +116,7 @@ const RPC_PREFIX = '{"jsonrpc":"2.0","id":1,"result":';
 /** The exact `result` text of one tools/list answer from a freshly spawned
  * proxy. Sliced out of the raw stdout line, never re-serialized. */
 async function toolsListWire(entry: string, env: Record<string, string>): Promise<string> {
-  // A developer shell (or an JLFBot turn running this suite) can carry
+  // A developer shell (or an ASLBot turn running this suite) can carry
   // JLFBOT_* switches of its own; the profile must be the only source.
   const inherited = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("JLFBOT_")));
   const child = spawn(process.execPath, [entry], {

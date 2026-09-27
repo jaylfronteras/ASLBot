@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  The JLFBot mark: the same silhouette every roster row draws, as a single-colour
+  The ASLBot mark: the same silhouette every roster row draws, as a single-colour
   vector. White on transparent, which is exactly the notification small-icon
   contract (the system tints it), and tintable anywhere else it is used.
 -->

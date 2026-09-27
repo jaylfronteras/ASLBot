@@ -31,7 +31,7 @@ export interface LocalVmInventoryEntry {
 }
 
 /** Idle cleanup is destructive. An exact derived name alone is not ownership:
- * a pre-existing container must also carry JLFBot's verified labels. */
+ * a pre-existing container must also carry ASLBot's verified labels. */
 export function shouldArmLocalVmIdle(
   status: Pick<ContainerComputerStatus, "container" | "managed"> | null,
 ): boolean {

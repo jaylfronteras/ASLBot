@@ -1,4 +1,4 @@
-// JLFBot server — the harness host. Clients hold no transports
+// ASLBot server — the harness host. Clients hold no transports
 // (upstream rule): the React app dispatches typed commands over HTTP and
 // folds one SSE event stream; every provider process runs here.
 import { AsyncLocalStorage } from "node:async_hooks";
@@ -175,6 +175,7 @@ import { describeSpawnFailure, execCli } from "./procs.ts";
 import { blockedTarget, buildNotification, buildSpendNotification, type Notification } from "./notify.ts";
 import {
   isModelVariant,
+  type AnyProviderDriver,
   type ModelSelection,
   type RequestOutcome,
   type RuntimeEvent,
@@ -205,7 +206,10 @@ import {
 } from "./group-goal-run.ts";
 import type { GroupGoalRunCardData, GroupGoalRunStatus } from "../shared/group-goal-run.ts";
 
-import { BUILT_IN_DRIVERS } from "./drivers/builtIn.ts";
+import { PRODUCT_DRIVERS } from "./drivers/builtIn.ts";
+import {
+  createProvider, deleteProvider, listProviders, PROVIDER_PRESETS, providerWriteSchema, updateProvider,
+} from "./providers.ts";
 import { getOrCreateChannel, mirrorActivity, mirrorExchange, mirrorReply, type CommsBus } from "./comms-visibility.ts";
 import { readMessageText, recallMessages, recentMessages, searchMessages, closeMessageDb, chatFollowups, cancelledChatFollowup, settleChatFollowups, threadsReferencing } from "./message-db.ts";
 import { briefCrossingLabel, claimRecallCrossings, recallCrossingLabel } from "./recall-disclosure.ts";
@@ -510,7 +514,7 @@ import { json, onJsonBody, parsedBodyOf, readBody } from "./harness/http.ts";
 import { ROUTES, dispatchRoutes } from "./routes/table.ts";
 import { createHostedSlackRoutes } from "./routes/hosted-slack.ts";
 
-const PORT = Number(process.env.JLFBOT_PORT || process.env.OGB_PORT || 8799);
+const PORT = Number(process.env.JLFBOT_PORT || process.env.ASLBOT_PORT || process.env.OGB_PORT || 8899);
 const WEBHOOK_PORT = Number(process.env.JLFBOT_WEBHOOK_PORT || PORT + 1);
 // Behind a proxy or tunnel, the base URL senders should use (docs/self-hosting.md).
 const WEBHOOK_PUBLIC_URL = process.env.JLFBOT_WEBHOOK_PUBLIC_URL || undefined;
@@ -555,7 +559,7 @@ if (existsSync(join(DATA_DIR, ".backups"))) {
 }
 const workspaceMaintenance = new WorkspaceBackupMaintenance();
 // Only after ensureDirs(): it performs the one-time rename of the legacy data
-// dir, which must not find a freshly created ~/.jlfbot already there.
+// dir, which must not find a freshly created ~/.aslbot already there.
 // Remote clients (server/request-auth.ts, server/sessions.ts): a stable identity
 // for this server, the paired sessions, and the cookie the served UI uses.
 const ENVIRONMENT_ID = loadEnvironmentId(DATA_DIR);
@@ -643,6 +647,16 @@ function customDomainStatus() {
     serverIpv4: DESKTOP_MANAGED ? null : customDomainIpv4(),
   };
 }
+const BUILT_IN_DRIVERS: readonly AnyProviderDriver[] = await (async () => {
+  if (process.env.ASLBOT_TEST_ENGINES !== "1") return PRODUCT_DRIVERS;
+  try {
+    const legacy = await import("./drivers/" + "legacy-builtIn.ts");
+    return [...legacy.LEGACY_DRIVERS, ...PRODUCT_DRIVERS];
+  } catch (error) {
+    console.error(`test engines were not loaded (${error instanceof Error ? error.message : String(error)})`);
+    return PRODUCT_DRIVERS;
+  }
+})();
 const registry = new ProviderRegistry(BUILT_IN_DRIVERS);
 // Engines installed from Settings live under the data directory and win over
 // any other copy on PATH.
@@ -729,7 +743,7 @@ function threadPersonKey(threadId: string): string | undefined {
 function cardAnswerRefusal(auth: RequestAuth, threadId: string, requestId: string, behavior: string): string | null {
   if (auth.kind === "loopback") {
     return auth.trust === "service" && behavior !== "deny"
-      ? "A local service can only decline this request. Approve or answer it in JLFBot while signed in."
+      ? "A local service can only decline this request. Approve or answer it in ASLBot while signed in."
       : null;
   }
   if (auth.scopes.includes("admin") || !sharedMembership()) return null;
@@ -1247,7 +1261,7 @@ function applyDesktopMutationTokenMessage(raw: unknown): boolean {
 const browserCleanup: BrowserCleanupCoordinator = new BrowserCleanupCoordinator({
   file: join(DATA_DIR, "browser-cleanups.json"),
   send: (request) => {
-    // Cleanup may only run the engine JLFBot itself configured or
+    // Cleanup may only run the engine ASLBot itself configured or
     // downloaded. A binary the ambient PATH turned up — on a dev machine, a
     // global wrapper that shadows the harness PATH and rewrites the session
     // key — is not that engine: a close through it can fail and wedge the
@@ -1266,7 +1280,7 @@ const browserCleanup: BrowserCleanupCoordinator = new BrowserCleanupCoordinator(
     const work = status.kind === "ready" && sessions.length
       ? Promise.all(sessions.map(async (session) => {
           const ok = await clearBrowserSessionState(status.binaryPath, session, { encryptionKey: browserEngineEncryptionKey() });
-          if (!ok) console.warn(`browser cleanup: could not clear saved state for session ${session}; restart JLFBot to retry this profile's cleanup. Do not use state clear --all: it erases other profiles too.`);
+          if (!ok) console.warn(`browser cleanup: could not clear saved state for session ${session}; restart ASLBot to retry this profile's cleanup. Do not use state clear --all: it erases other profiles too.`);
           return ok;
         }))
       : Promise.resolve([true]);
@@ -2392,7 +2406,9 @@ const teamComputers = new TeamComputers(join(DATA_DIR, "team-computers.json"), E
 let followupsReady = false;
 const sendSequencer = new SendSequencer();
 bootSelection = await defaultSelection();
-store.seedIfEmpty();
+// The inherited suite still opens on a starter bot. The product opens on
+// the add-a-provider step instead of a bot that has nowhere to talk.
+if (process.env.ASLBOT_TEST_ENGINES === "1") store.seedIfEmpty();
 hostedModels?.reconcile(store);
 // A committed profile cleanup means both its config deletion and bot-reference
 // cleanup were intended to be durable. Reconcile stale secondary references
@@ -2455,7 +2471,7 @@ function previewSystemPrompt(bot: BotRecord) {
   // `cfg` is the module-level config (`const cfg = loadConfig()` near the
   // top of index.ts), the same object the turn code reads.
   const persona = [
-    `You are ${bot.name}, a personal bot in JLFBot.`,
+    `You are ${bot.name}, a personal bot in ASLBot.`,
     bot.title && `Role: ${bot.title}.`,
     bot.description && `About: ${bot.description}`,
   ]
@@ -4933,7 +4949,7 @@ async function mountHostComputer(owner: TurnOwner, botId: string, providerSuppor
       : "this model engine cannot control this computer — choose Claude or an ACP engine, or select another destination");
   }
   const cua = readCuaConnection();
-  if (!cua) throw new Error("CUA Driver is not ready for this computer — check permissions and restart JLFBot");
+  if (!cua) throw new Error("CUA Driver is not ready for this computer — check permissions and restart ASLBot");
   await bindTurnComputer(owner, "computer:host");
   return gatedLocalComputer(cua, controlIntegration(botId, owner.threadId, owner.generation));
 }
@@ -5582,7 +5598,7 @@ bus.subscribe((event: RuntimeEvent) => {
       const permission = event.requestType === "permission" && !event.questions?.length;
       // A permission request here is one the provider left for a person: its
       // own mode already ran (Ask, Edits, Auto's reviewer, Custom's config).
-      // JLFBot decides nothing about the action itself. Only Full access
+      // ASLBot decides nothing about the action itself. Only Full access
       // answers, because that is exactly what the person granted. A QUESTION
       // always reaches the human — even Full access never invents an answer.
       const asker = bot ?? (speaker ? store.bot(speaker.botId) : undefined);
@@ -7351,7 +7367,7 @@ async function startTurn(
       let dispatchContext = decideContext(plannedConfig);
 
       const persona = [
-        `You are ${bot.name}, a personal bot in JLFBot.`,
+        `You are ${bot.name}, a personal bot in ASLBot.`,
         bot.title && `Role: ${bot.title}.`,
         bot.description && `About: ${bot.description}`,
       ]
@@ -7427,7 +7443,7 @@ async function startTurn(
         throw Object.assign(new Error("another thread is working in this project folder — wait for it to finish or choose a separate folder"), { status: 409, code: "workspace_busy" });
       }
       // Checkpoint explicit project folders, where a bot can overwrite the
-      // user's work. Its private JLFBot workspace is app-owned and changes
+      // user's work. Its private ASLBot workspace is app-owned and changes
       // on nearly every ordinary chat; snapshotting it would add hidden disk
       // and process overhead without a user project to restore.
       const checkpointCwd = cwd && cwd !== privateWorkspace ? cwd : undefined;
@@ -8451,10 +8467,10 @@ store.reconcileInterruptedGroupGoals((runId, threadId) => {
   );
   const detail = run.output ?? run.error ?? (
     status === "completed"
-      ? "The scheduled team goal completed before JLFBot restarted."
+      ? "The scheduled team goal completed before ASLBot restarted."
       : status === "stopped"
         ? "The scheduled team goal was stopped."
-        : "JLFBot restarted before this scheduled team goal finished."
+        : "ASLBot restarted before this scheduled team goal finished."
   );
   return { status, detail, finishedAt: run.finishedAt ?? groupGoalRecoveryAt };
 });
@@ -8492,7 +8508,7 @@ async function cloudRoutineReadiness(): Promise<{ ready: boolean; reason?: strin
   }
   const instance = registry.instances().find((candidate) => candidate.driverKind === "boxAgent");
   if (!instance) {
-    return { ready: false, reason: "The Cloud VM runner is unavailable. Restart JLFBot and try again." };
+    return { ready: false, reason: "The Cloud VM runner is unavailable. Restart ASLBot and try again." };
   }
   try {
     const snapshot = await instance.snapshot();
@@ -8593,12 +8609,12 @@ async function deleteBotWithLifecycle(botId: string, revalidate: () => void = ()
           const vm = await containerComputerStatus(undefined, undefined, target);
           if (!vm.daemonUp && existsSync(target.workspaceDir)) {
             return deletionResponse( 409, {
-              error: "start the container runtime so JLFBot can remove this bot's Local VM while deleting it",
+              error: "start the container runtime so ASLBot can remove this bot's Local VM while deleting it",
             });
           }
           if (vm.container !== "missing" && !vm.managed) {
             return deletionResponse(409, {
-              error: `The container named ${vm.container_name} was not created by JLFBot. Remove it manually before deleting this bot`,
+              error: `The container named ${vm.container_name} was not created by ASLBot. Remove it manually before deleting this bot`,
             });
           }
           localVmCleanup = {
@@ -8808,7 +8824,7 @@ function dispatchTeamSetupResume(entry: TeamSetupResumeEntry): void {
     pendingTeamSetupResumes.set(request.requestId, entry);
     return;
   }
-  const prompt = `JLFBot team setup decision ${request.requestId}: ${JSON.stringify(request.result)}. Report this exact result and continue the user's already requested work. Do not ask for confirmation again or repeat this setup/deletion. A denied or cancelled operation did not authorize any substitute action. Existing thread models were not changed.`;
+  const prompt = `ASLBot team setup decision ${request.requestId}: ${JSON.stringify(request.result)}. Report this exact result and continue the user's already requested work. Do not ask for confirmation again or repeat this setup/deletion. A denied or cancelled operation did not authorize any substitute action. Existing thread models were not changed.`;
   const failed = (error: string) => {
     if (cancelled()) return;
     const current = store.messagesFor(request.threadId).find((item) => item.id === messageId);
@@ -9623,7 +9639,7 @@ async function runGroupMemberTurn(
     ? reachablePeers(store.bots, bot).filter((peer) => !readyGroup.memberIds.includes(peer.id))
     : [];
   const system = [
-    `You are ${bot.name}, a bot in the room "${readyGroup.name}" in JLFBot.`,
+    `You are ${bot.name}, a bot in the room "${readyGroup.name}" in ASLBot.`,
     bot.title && `Role: ${bot.title}.`,
     bot.description && `About: ${bot.description}`,
     `Room members: ${roster}, and ${userName} (the human).`,
@@ -9631,7 +9647,7 @@ async function runGroupMemberTurn(
     `Reply as yourself, briefly and conversationally. To bring a teammate in, mention them like @Name — they'll see the conversation and respond.`,
     outsideRoom.length > 0 && orchestration && !orchestration.roomHandoffId && roomPeerRosterSystemPrompt(outsideRoom),
     integrations.agents && (CREDENTIAL_PROMPT + (orchestration && !orchestration.roomHandoffId ? THREADS_PROMPT : "")).trim(),
-    integrations.agents && (!orchestration || orchestration.roomHandoffId) && "For actual JLFBot teamwork, discover IDs with list_room_targets and use coordinate_bots for advice or work in this or another room. Do not substitute native coding helpers for these named bots. Consult only when needed to make a decision; no discussion step is mandatory. Give concrete responsibilities, exact accessible paths and acceptance checks. End your turn after assigning; busy teammates queue and results automatically resume you. When they return, finish the requested verification and give the user one final answer. Native helper names are not evidence that an JLFBot teammate participated. Plain @mentions are only for conversational replies in this room.",
+    integrations.agents && (!orchestration || orchestration.roomHandoffId) && "For actual ASLBot teamwork, discover IDs with list_room_targets and use coordinate_bots for advice or work in this or another room. Do not substitute native coding helpers for these named bots. Consult only when needed to make a decision; no discussion step is mandatory. Give concrete responsibilities, exact accessible paths and acceptance checks. End your turn after assigning; busy teammates queue and results automatically resume you. When they return, finish the requested verification and give the user one final answer. Native helper names are not evidence that an ASLBot teammate participated. Plain @mentions are only for conversational replies in this room.",
     integrations.agents && ROUTINE_PROMPT.trim(),
     integrations.agents && PROFILE_PROMPT.trim(),
     skillAuthoring && LEARN_PROMPT.trim(),
@@ -11139,7 +11155,7 @@ function dispatchConnectorResume(entry: { botId: string; threadId: string; resum
   const owner = connectorThread(entry.botId, entry.threadId);
   if (!owner) return;
   const names = entry.labels.join(", ");
-  const prompt = `JLFBot connection update: the user securely connected ${names}. Continue the task that paused for this connection. Do not ask them to connect it again.`;
+  const prompt = `ASLBot connection update: the user securely connected ${names}. Continue the task that paused for this connection. Do not ask them to connect it again.`;
   if (!canAdmitDirectTurn(entry.botId, entry.threadId)) {
     pendingConnectorResumes.set(`${entry.threadId}:${entry.resumeKey}`, entry);
     return;
@@ -11245,7 +11261,7 @@ function phoneSecretSubmissionKey(threadId: string, messageId: string, requestKe
 }
 
 function credentialDesktopHandoff(label: string): string {
-  return `Securely provide the ${label} from JLFBot on your phone or computer. It is never added to chat.`;
+  return `Securely provide the ${label} from ASLBot on your phone or computer. It is never added to chat.`;
 }
 
 function secretMessage(botId: string, threadId: string, messageId: string): Message | null {
@@ -11282,8 +11298,8 @@ function dispatchSecretResume(entry: SecretResumeEntry) {
   if (!owner) return;
   const prompt =
     entry.outcome === "provided"
-      ? `JLFBot credential update: the user securely provided ${entry.label}. Continue the task that paused for it. You do not receive the secret and must not ask them to paste it into chat.`
-      : `JLFBot credential update: the user declined to provide ${entry.label}. Continue without it if possible, or briefly explain the limitation. Do not ask them to paste it into chat.`;
+      ? `ASLBot credential update: the user securely provided ${entry.label}. Continue the task that paused for it. You do not receive the secret and must not ask them to paste it into chat.`
+      : `ASLBot credential update: the user declined to provide ${entry.label}. Continue without it if possible, or briefly explain the limitation. Do not ask them to paste it into chat.`;
   if (!canAdmitDirectTurn(entry.botId, entry.threadId)) {
     pendingSecretResumes.set(`${entry.threadId}:${entry.messageId}`, entry);
     return;
@@ -12269,7 +12285,7 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
     // A stranger learns only the app name; pid (the desktop boot probe keys
     // on it) and the static flag stay behind the gate below.
     if (method === "GET" && path === "/api/health" && !gate.auth) {
-      return json(res, 200, { app: "jlfbot" });
+      return json(res, 200, { app: "aslbot" });
     }
     // The brand is public too: the sign-in page must carry the deployment's
     // name and icon before anyone has a session, and it holds nothing secret.
@@ -12387,7 +12403,7 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
       res.setHeader("cache-control", "no-store");
       if (method === "GET") return json(res, 200, customDomainStatus());
       if (method === "POST" || method === "DELETE") {
-        if (DESKTOP_MANAGED) return json(res, 409, { error: "Custom domains are configured on a self-hosted JLFBot server, not the desktop companion." });
+        if (DESKTOP_MANAGED) return json(res, 409, { error: "Custom domains are configured on a self-hosted ASLBot server, not the desktop companion." });
         if (!/^application\/json\b/i.test(String(req.headers["content-type"] ?? ""))) {
           return json(res, 415, { error: "content-type must be application/json" });
         }
@@ -12611,7 +12627,7 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
           source!.previousSurface = store.taskByThread(bot.id, bot.threadId)?.surface;
         }
         return json(res, 200, { status: "pending", surface: option.surface,
-          message: `End this turn now without using the previous computer tools. JLFBot will continue the original request on ${option.label} with a fresh tool connection.` });
+          message: `End this turn now without using the previous computer tools. ASLBot will continue the original request on ${option.label} with a fresh tool connection.` });
       }
       if (method === "POST" && path === "/api/internal/hook") {
         const body = await readInternalBody();
@@ -14441,7 +14457,7 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
     // ── independent webhook triggers ────────────────────────────────────
     // Management stays on the app-only server. Actual deliveries land on a
     // second, webhook-only loopback listener so Funnel or a future hosted
-    // relay never has to expose the rest of JLFBot's control surface.
+    // relay never has to expose the rest of ASLBot's control surface.
     if (path === "/api/webhooks" && method === "GET") {
       const shownHooks = webhooks.list().filter((webhook) => visible.bot(webhook.botId));
       const shownIds = new Set(shownHooks.map((webhook) => webhook.id));
@@ -14627,7 +14643,7 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
       if (threadId === undefined &&
         (auth.kind === "session" || req.headers["x-jlfbot-companion"] === "1") &&
         store.tasks(botId).length > 1) {
-        throw Object.assign(new Error("This bot has more than one thread. Update the JLFBot app on this device, then choose a thread and try again."), { status: 409 });
+        throw Object.assign(new Error("This bot has more than one thread. Update the ASLBot app on this device, then choose a thread and try again."), { status: 409 });
       }
     };
     if (method === "GET" && path === "/api/bots") {
@@ -14716,7 +14732,7 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
     // a bot must render a Markdown link or carry a generated-image attachment,
     // while a user message must carry the standalone composer tag. The bot
     // branch derives conversation/workspace roots; the user branch is limited
-    // to JLFBot's private attachment directory. This is deliberately not
+    // to ASLBot's private attachment directory. This is deliberately not
     // a general path reader.
     m = path.match(/^\/api\/threads\/([\w-]+)\/messages\/([\w-]+)\/file$/);
     const streamsMessageImage = Boolean(
@@ -15059,7 +15075,7 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
           ? body.name.trim()
           : profileName
             ? `${profileName}'s Team`
-            : "My JLFBot Team";
+            : "My ASLBot Team";
       const memberIds = store.bots.filter((bot) => !bot.hidden).map((bot) => bot.id);
       if ((body.format === "backup" ? store.bots.length : memberIds.length) === 0) return json(res, 400, { error: "Create a bot before exporting your team" });
       try {
@@ -16965,7 +16981,7 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
       // to open by hand instead.
       const workspacePath = memoryOverview(m[1]).workspacePath;
       if (auth.kind !== "loopback") {
-        return json(res, 403, { error: `This only works on the computer running JLFBot. The memory folder there is ${workspacePath}`, workspacePath });
+        return json(res, 403, { error: `This only works on the computer running ASLBot. The memory folder there is ${workspacePath}`, workspacePath });
       }
       const opened = await openMemoryLocation(m[1], parsed.data.target);
       if (!opened.ok) return json(res, 500, { error: opened.error, workspacePath: opened.workspacePath });
@@ -18187,7 +18203,7 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
     // child proves it is OURS by echoing its pid (a stray dev server has
     // the same API shape but a different pid)
     if (method === "GET" && path === "/api/health") {
-      return json(res, 200, { app: "jlfbot", pid: process.pid, static: Boolean(STATIC_DIR), capabilities: {
+      return json(res, 200, { app: "aslbot", pid: process.pid, static: Boolean(STATIC_DIR), capabilities: {
         guardedMessages: 1, guardedRequests: 1, guardedFullAccess: 1, guardedOnBehalfOf: 1,
         ...(sharedWorkspaceFullAccessEnabled() ? { sharedWorkspaceFullAccess: 1 } : {}),
       } });
@@ -18402,6 +18418,61 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
       resetPathCache();
       return json(res, 200, { instances: await describeInstances() });
     }
+    if (method === "GET" && path === "/api/providers") {
+      return json(res, 200, { presets: PROVIDER_PRESETS, providers: listProviders(cfg) });
+    }
+    if (method === "POST" && path === "/api/providers") {
+      if (!String(req.headers["content-type"] ?? "").toLowerCase().startsWith("application/json")) {
+        return json(res, 415, { error: "content-type must be application/json" });
+      }
+      const parsed = providerWriteSchema.safeParse(await readBody(req, 64 * 1024));
+      if (!parsed.success) return json(res, 400, { error: parsed.error.issues[0]?.message ?? "Check the provider name, URL, and API key." });
+      if (providerConfigBusy) return json(res, 409, { error: "provider settings are already being updated" });
+      providerConfigBusy = true;
+      try {
+        const created = createProvider(cfg, parsed.data);
+        await persistProviderInstance(created.instanceId, created.instances);
+        if (!cfg.defaultModelSelection) {
+          const model = parsed.data.models?.[0] ?? "meta-llama/llama-3.3-70b-instruct";
+          saveConfig({ defaultModelSelection: { instanceId: created.instanceId, model } });
+        }
+        broadcast({ kind: "config", ...configStatus() });
+        return json(res, 201, { id: created.instanceId, providers: listProviders(cfg), instances: await describeInstances() });
+      } catch (error) {
+        const status = error && typeof error === "object" && "status" in error && error.status === 400 ? 400 : 500;
+        return json(res, status, { error: error instanceof Error ? error.message : "Could not add that provider." });
+      } finally { providerConfigBusy = false; }
+    }
+    const providerItem = /^\/api\/providers\/([\w.-]+)$/.exec(path);
+    if (providerItem && (method === "PATCH" || method === "DELETE")) {
+      if (method === "PATCH" && !String(req.headers["content-type"] ?? "").toLowerCase().startsWith("application/json")) {
+        return json(res, 415, { error: "content-type must be application/json" });
+      }
+      const instanceId = providerItem[1];
+      if (providerConfigBusy) return json(res, 409, { error: "provider settings are already being updated" });
+      providerConfigBusy = true;
+      try {
+        if (method === "DELETE") {
+          const used = store.bots.some((bot) => bot.modelSelection.instanceId === instanceId || store.tasks(bot.id).some((task) =>
+            task.modelSelection?.instanceId === instanceId));
+          if (used) return json(res, 409, { error: "A bot is still using this provider. Switch that bot first." });
+          const instances = deleteProvider(cfg, instanceId);
+          if (!instances) return json(res, 404, { error: "No provider with that id." });
+          await persistProviderInstance(instanceId, instances);
+        } else {
+          const parsed = providerWriteSchema.safeParse(await readBody(req, 64 * 1024));
+          if (!parsed.success) return json(res, 400, { error: parsed.error.issues[0]?.message ?? "Check the provider name, URL, and API key." });
+          const instances = updateProvider(cfg, instanceId, parsed.data);
+          if (!instances) return json(res, 404, { error: "No provider with that id." });
+          await persistProviderInstance(instanceId, instances);
+        }
+        broadcast({ kind: "config", ...configStatus() });
+        return json(res, 200, { providers: listProviders(cfg), instances: await describeInstances() });
+      } catch (error) {
+        const status = error && typeof error === "object" && "status" in error && error.status === 400 ? 400 : 500;
+        return json(res, status, { error: error instanceof Error ? error.message : "Could not update that provider." });
+      } finally { providerConfigBusy = false; }
+    }
     const companyMutation = /^\/api\/instances\/(company\.[\w.-]+)(?:\/|$)/.exec(path);
     if (hostedModels && path.startsWith("/api/instances/") && method !== "GET") return json(res, 403, { error: HOSTED_PROVIDER_SETTINGS_ERROR });
     if (companyMutation && method !== "GET") return json(res, 403, { error: "Company accounts are read-only here. Manage this connection in desktop Settings." });
@@ -18468,7 +18539,7 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
           return json(res, 200, { instances: await describeInstances() });
         }
         if (action === "install") {
-          if (!(await registry.installRuntime(instanceId))) return json(res, 404, { error: "Installing this engine from Settings is not available on this server. Use the install command on the machine running JLFBot." });
+          if (!(await registry.installRuntime(instanceId))) return json(res, 404, { error: "Installing this engine from Settings is not available on this server. Use the install command on the machine running ASLBot." });
           return json(res, 200, { instances: await describeInstances() });
         }
         if (action === "auth/start") {
@@ -18962,7 +19033,7 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
               // deterministic rename. The replacement credential already
               // proved the exact deletion target, so its in-flight resource
               // is governed by that stronger target-bound receipt rather
-              // than an JLFBot name check.
+              // than an ASLBot name check.
               if (replacementProvedByDeletion && deletingBoxIds.has(recovery.boxId)) continue;
               const inspected = await box.inspectBoxIdentity({ box: { token: currentBoxToken } }, recovery.boxId);
               if (!inspected.available) {

@@ -454,14 +454,14 @@ function hasNoPublishedPorts(config: {
 function statusProblem(status: VpsComputerStatus): string | null {
   if (!status.configured) return "Configure a VPS SSH alias in App Settings → Connections";
   if (!status.daemonUp) return "Docker over SSH could not reach the VPS; check the SSH alias and Docker on the VPS";
-  if (!status.image) return `Prepare the pinned JLFBot Cua image on the VPS (Driver ${CUA_DRIVER_VERSION})`;
-  if (status.container === "missing") return "No JLFBot container exists for this bot on the VPS";
-  if (!status.imageMatches) return "The VPS container uses an incompatible or untrusted JLFBot image";
-  if (!status.managed) return "The VPS container name is occupied by a container JLFBot did not create";
+  if (!status.image) return `Prepare the pinned ASLBot Cua image on the VPS (Driver ${CUA_DRIVER_VERSION})`;
+  if (status.container === "missing") return "No ASLBot container exists for this bot on the VPS";
+  if (!status.imageMatches) return "The VPS container uses an incompatible or untrusted ASLBot image";
+  if (!status.managed) return "The VPS container name is occupied by a container ASLBot did not create";
   if (status.network === "unsafe") return "The VPS container uses an unapproved network or publishes ports; refusing to use it";
   if (status.mounts === "unsafe") return "The VPS container has host mounts; refusing to use it";
-  if (status.security === "unsafe") return "The VPS container is missing JLFBot safety limits";
-  if (status.container === "stopped") return "The JLFBot VPS container is stopped";
+  if (status.security === "unsafe") return "The VPS container is missing ASLBot safety limits";
+  if (status.container === "stopped") return "The ASLBot VPS container is stopped";
   if (status.desktop_error) return `The VPS Cua desktop failed to start: ${status.desktop_error}`;
   if (!status.desktopReady) return "The VPS container started, but Cua Driver is not ready yet";
   return null;
@@ -1110,12 +1110,12 @@ export async function vpsComputerAction(
         // IMAGE_LAYER_VERSION bump otherwise bricks the bot: provision 409s
         // on assertUsableContainer forever), so it deliberately skips that
         // check. The ownership labels from the inspect are the only gate:
-        // never docker-rm a container JLFBot did not create, even one
+        // never docker-rm a container ASLBot did not create, even one
         // squatting on our name.
         if (before.container === "missing") return before;
         if (!before.managed) {
           throw Object.assign(
-            new Error("The VPS container name is occupied by a container JLFBot did not create — remove it on the VPS yourself"),
+            new Error("The VPS container name is occupied by a container ASLBot did not create — remove it on the VPS yourself"),
             { status: 409 },
           );
         }

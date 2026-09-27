@@ -115,9 +115,9 @@ posixOnly("authorization decisions are logged", () => {
   beforeAll(async () => {
     chmodSync(FAKE_CLI, 0o755);
     home = mkdtempSync(join(tmpdir(), "jlfbot-decisions-e2e-"));
-    mkdirSync(join(home, ".jlfbot"), { recursive: true });
+    mkdirSync(join(home, ".aslbot"), { recursive: true });
     writeFileSync(
-      join(home, ".jlfbot", "config.json"),
+      join(home, ".aslbot", "config.json"),
       JSON.stringify({
         instances: {
           grok: {

@@ -7,7 +7,7 @@ The `ui` group of `control-jlfbot` drives the real React renderer — the same
 `scripts/testing/control-jlfbot-ui.ts`). Everything it touches is disposable: the
 fake-engine fixture from `launch`, a Vite preview of the app, and one browser
 session whose `HOME` is the fixture's data directory. The user's app on port
-8799 and `~/.jlfbot` are never involved.
+8799 and `~/.aslbot` are never involved.
 
 ## Launch
 

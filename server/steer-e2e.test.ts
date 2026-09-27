@@ -76,13 +76,13 @@ posixOnly("mid-turn steering e2e", () => {
     chmodSync(FAKE_ACP, 0o755);
     chmodSync(FAKE_CODEX, 0o755);
     home = mkdtempSync(join(tmpdir(), "jlfbot-steer-"));
-    mkdirSync(join(home, ".jlfbot"), { recursive: true });
+    mkdirSync(join(home, ".aslbot"), { recursive: true });
     steerGate = join(home, "delayed-steer.gate");
     steerFinishGate = join(home, "finish-steered-turn.gate");
     codexSteerGate = join(home, "codex-steer-refused.gate");
     writeFileSync(codexSteerGate, "refuse live steers until the queue test clears this gate");
     writeFileSync(
-      join(home, ".jlfbot", "config.json"),
+      join(home, ".aslbot", "config.json"),
       JSON.stringify({
         instances: {
           claude: { driver: "claudeAgent", environment: { FAKE_CLAUDE_MODE: "slow" }, config: { cli: FAKE_CLAUDE, permissionMode: "bypassPermissions" } },
@@ -200,7 +200,7 @@ posixOnly("mid-turn steering e2e", () => {
       "the image queue tool chip",
     );
 
-    const attachments = join(home, ".jlfbot", "attachments");
+    const attachments = join(home, ".aslbot", "attachments");
     mkdirSync(attachments, { recursive: true });
     const firstImagePath = join(attachments, "123e4567-e89b-42d3-a456-426614174000.png");
     const secondImagePath = join(attachments, "123e4567-e89b-42d3-a456-426614174001.png");
@@ -235,7 +235,7 @@ posixOnly("mid-turn steering e2e", () => {
     await waitFor(async () => (await getBot(created.id)).busy === false, "the attached follow-up to settle");
 
     const nativeRows = readFileSync(
-      join(home, ".jlfbot", "native", `${created.threadId}.ndjson`),
+      join(home, ".aslbot", "native", `${created.threadId}.ndjson`),
       "utf8",
     )
       .trim()
@@ -377,7 +377,7 @@ posixOnly("mid-turn steering e2e", () => {
     expect(steered.steered).toBe(true);
 
     // the fold reached the app-server as mid-turn input for the SAME turn
-    const nativeRows = readFileSync(join(home, ".jlfbot", "native", `${created.threadId}.ndjson`), "utf8")
+    const nativeRows = readFileSync(join(home, ".aslbot", "native", `${created.threadId}.ndjson`), "utf8")
       .trim().split("\n").map((line) => JSON.parse(line));
     const steerRow = nativeRows.find((row) => row.dir === "out" && row.msg?.method === "turn/steer")?.msg;
     expect(steerRow?.params).toMatchObject({
@@ -495,7 +495,7 @@ posixOnly("mid-turn steering e2e", () => {
     expect(folded?.sender).toEqual(PAIRED);
 
     // the fold reached the app-server as mid-turn input for the SAME turn
-    const nativeRows = readFileSync(join(home, ".jlfbot", "native", `${room.threadId}.ndjson`), "utf8")
+    const nativeRows = readFileSync(join(home, ".aslbot", "native", `${room.threadId}.ndjson`), "utf8")
       .trim().split("\n").map((line) => JSON.parse(line));
     const steerRow = nativeRows.find((row) => row.dir === "out" && row.msg?.method === "turn/steer")?.msg;
     expect(steerRow?.params).toMatchObject({ input: [{ type: "text", text: "steer these room words" }] });

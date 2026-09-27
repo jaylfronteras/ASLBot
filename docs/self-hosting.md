@@ -1,4 +1,4 @@
-# Self-hosting the JLFBot server
+# Self-hosting the ASLBot server
 
 Run the harness server on an always-on Linux box (a VPS, a home server, a
 Mac mini in a closet) and pair browsers, the desktop app, or phones with it.
@@ -13,7 +13,7 @@ The npm CLI supports a managed public tunnel, Tailscale, or your own proxy.
 > session. If several people use one server, read
 > [Loopback trust](#loopback-trust-owner-or-service) below.
 
-Step by step, for a server you do not have yet: [Deploy JLFBot on a
+Step by step, for a server you do not have yet: [Deploy ASLBot on a
 VPS](deploy-vps.md) walks through the three ways in (public address, own
 domain, Tailscale), signing engines in, pairing, keeping it running,
 updating and backups. This page is the reference behind it.
@@ -54,7 +54,7 @@ Codex also offers device-code login for SSH. API-key connections currently
 support chat, not agent tools or computer use. The [setup guide](cli-onboarding.md)
 explains the choices, key storage, and how to run setup again safely.
 
-It then starts the server and keeps your data in `~/.jlfbot`. If you
+It then starts the server and keeps your data in `~/.aslbot`. If you
 choose phone access, it prints a pairing link and QR code only after checking
 the HTTPS connection. Choosing **Skip for now** keeps the workspace local-only
 and creates no pairing invitation. Use `npx jlfbot setup` to configure without starting, or
@@ -65,7 +65,7 @@ The npm package does not include engine CLIs (`claude`, `codex`, …); setup
 can offer to install and sign in supported engines on this machine.
 Run setup, engine authentication, and the server as the same unprivileged
 operating-system user. Engine credentials live in that user's CLI-specific
-directories, not all under `.jlfbot`.
+directories, not all under `.aslbot`.
 
 For a Linux service, the [VPS guide](deploy-vps.md#before-you-start) shows the
 account setup, engine installation, and browser dependency installation.
@@ -93,7 +93,7 @@ is present. Three ways to make the server reachable from elsewhere:
   server, and it still has to pair: the tunnel lands on a separate listener
   the server treats as "through a proxy", never as the owner. `npx jlfbot
   logout` releases the address. The account credentials live in
-  `~/.jlfbot/tunnel-account.json` (mode 0600).
+  `~/.aslbot/tunnel-account.json` (mode 0600).
   Starting it from a fleet or a container, where nobody can type an emailed
   code? Set `JLFBOT_INSTALLATION_CREDENTIAL` to the installation credential the
   fleet issued and skip `login`: the address and connector token are fetched
@@ -206,7 +206,7 @@ Requirements: Docker with Compose, a DNS name pointing at the machine, and
 ports 80/443 open.
 
 ```sh
-git clone https://github.com/jaylfronteras/JLFBot && cd JLFBot/deploy
+git clone https://github.com/jaylfronteras/ASLBot && cd ASLBot/deploy
 cp .env.example .env            # set DOMAIN
 docker compose pull jlfbot && docker compose up -d
 ```
@@ -254,11 +254,11 @@ Requirements: Node 24+, pnpm, and at least one agent CLI installed and
 signed in on the server.
 
 ```sh
-git clone https://github.com/jaylfronteras/JLFBot && cd JLFBot
+git clone https://github.com/jaylfronteras/ASLBot && cd ASLBot
 pnpm install
 
 # choose where data lives and start the server
-JLFBOT_DATA_DIR="$HOME/.jlfbot" JLFBOT_PORT=8799 \
+JLFBOT_DATA_DIR="$HOME/.aslbot" JLFBOT_PORT=8799 \
   node --experimental-strip-types server/index.ts
 ```
 
@@ -555,7 +555,7 @@ in `config.json` under `signIn.admins` and `signIn.members` and can be changed
 through the settings API without a restart; the environment variables win
 when set, which is how a container or a service unit is bootstrapped.
 
-The code itself comes from `accounts.jlfbot.example.com`, the JLFBot
+The code itself comes from `accounts.jlfbot.example.com`, the ASLBot
 account service, so your server needs no email credentials. Your server asks
 it to send the code, checks the answer, and then issues its own session
 cookie: the browser only ever talks to your server, and who is welcome is
@@ -581,7 +581,7 @@ hosted workspace refuses them.
 
 ### Who may answer a card
 
-Approval cards are the provider's own (see the approval modes); JLFBot
+Approval cards are the provider's own (see the approval modes); ASLBot
 adds none. On a workspace several people share — portal membership, or an
 email sign-in list that names members — it narrows only whose answer counts,
 and only when the card can be traced to a person:
@@ -874,8 +874,8 @@ umask 077
 BOT_ID=your-bot-id
 THREAD_ID=your-existing-thread-id
 TOKEN=$(openssl rand -hex 32)
-printf '{ "%s": {"token":"%s","threadId":"%s"} }\n' "$BOT_ID" "$TOKEN" "$THREAD_ID" > ~/.jlfbot/external-runtimes.json
-chmod 600 ~/.jlfbot/external-runtimes.json
+printf '{ "%s": {"token":"%s","threadId":"%s"} }\n' "$BOT_ID" "$TOKEN" "$THREAD_ID" > ~/.aslbot/external-runtimes.json
+chmod 600 ~/.aslbot/external-runtimes.json
 ```
 
 Keep the file private (`600` on Unix; restrict its Windows file permissions).

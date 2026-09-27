@@ -167,7 +167,7 @@ const managedBoxNameForFixture = (botId: string): string => {
   // process has a different HOME from the isolated server, so derive the
   // provider fixture row from that server's durable id rather than importing
   // the process-local boxNameFor value.
-  const environmentId = readFileSync(join(home, ".jlfbot", "environment-id"), "utf8").trim();
+  const environmentId = readFileSync(join(home, ".aslbot", "environment-id"), "utf8").trim();
   const environmentScope = createHash("sha256").update(environmentId).digest("hex").slice(0, 12);
   const botPrefix = botId.slice(0, 8).toLowerCase().replace(/[^a-z0-9]/g, "") || "bot";
   const botHash = createHash("sha256").update(botId).digest("hex").slice(0, 6);
@@ -211,7 +211,7 @@ const waitForIsolatedServer = async (
       if (response.status === 200) {
         const health = await response.json() as { app?: unknown; pid?: unknown; static?: unknown };
         lastObservedHealth = JSON.stringify(health);
-        if (health.app === "jlfbot" && health.pid === serverChild.pid && health.static === true) return;
+        if (health.app === "aslbot" && health.pid === serverChild.pid && health.static === true) return;
       }
     } catch {
       /* still starting */
@@ -347,7 +347,7 @@ const readJsonFileWhenReady = async <T = unknown>(file: string, timeout = 5_000)
 };
 
 const storedMessageCount = (threadId: string): number => {
-  const db = new DatabaseSync(join(home, ".jlfbot", "messages.db"), { readOnly: true });
+  const db = new DatabaseSync(join(home, ".aslbot", "messages.db"), { readOnly: true });
   try {
     const row = z.object({ count: z.number() }).parse(
       db.prepare("SELECT COUNT(*) AS count FROM messages WHERE thread_id = ?").get(threadId),
@@ -390,9 +390,9 @@ beforeAll(async () => {
   oneShotTextDump = join(home, "fake-claude-one-shot-dump.json");
   const fakeDockerDir = join(home, "fake-docker-bin");
   const fakeDockerProgram = join(fakeDockerDir, "docker-empty.mjs");
-  fakeDockerFixture = join(home, ".jlfbot", "fake-unmanaged-container");
-  fakeVpsFixture = join(home, ".jlfbot", "fake-vps-container.json");
-  fakeDockerLog = join(home, ".jlfbot", "fake-docker-calls.log");
+  fakeDockerFixture = join(home, ".aslbot", "fake-unmanaged-container");
+  fakeVpsFixture = join(home, ".aslbot", "fake-vps-container.json");
+  fakeDockerLog = join(home, ".aslbot", "fake-docker-calls.log");
   mkdirSync(fakeDockerDir, { recursive: true });
   writeFileSync(fakeDockerProgram, [
     'import { appendFileSync, existsSync, readFileSync, rmSync } from "node:fs";',
@@ -443,12 +443,12 @@ beforeAll(async () => {
     chmodSync(join(fakeDockerDir, "docker"), 0o755);
   }
   // a fleet of exactly one unknown driver: no CLI probes, no network
-  mkdirSync(join(home, ".jlfbot"), { recursive: true });
+  mkdirSync(join(home, ".aslbot"), { recursive: true });
   mkdirSync(join(staticDir, "assets"), { recursive: true });
-  writeFileSync(join(staticDir, "index.html"), "<!doctype html><title>Packaged JLFBot</title>");
+  writeFileSync(join(staticDir, "index.html"), "<!doctype html><title>Packaged ASLBot</title>");
   writeFileSync(join(staticDir, "assets", "smoke.css"), "body { color: white; }");
   writeFileSync(
-    join(home, ".jlfbot", "config.json"),
+    join(home, ".aslbot", "config.json"),
     JSON.stringify({
       // generated titles are opt-in; this suite turns them on because it
       // owns the one-shot's reply file (FAKE_CLAUDE_TEXT_FILE below)
@@ -467,7 +467,7 @@ beforeAll(async () => {
     }),
   );
   writeFileSync(
-    join(home, ".jlfbot", "groups.json"),
+    join(home, ".aslbot", "groups.json"),
     JSON.stringify([
       {
         id: "test-dm",
@@ -537,10 +537,10 @@ beforeAll(async () => {
     ]),
   );
 
-  const linkedWorkspace = join(home, ".jlfbot", "workspaces", "test-bot-a");
+  const linkedWorkspace = join(home, ".aslbot", "workspaces", "test-bot-a");
   const linkedFile = join(linkedWorkspace, "phone report.md");
   const linkedImage = join(linkedWorkspace, "preview.png");
-  const privateAttachments = join(home, ".jlfbot", "attachments");
+  const privateAttachments = join(home, ".aslbot", "attachments");
   const userAttachment = join(privateAttachments, "shared-notes.pdf");
   const generatedImage = join(privateAttachments, "generated.png");
   mkdirSync(linkedWorkspace, { recursive: true });
@@ -550,7 +550,7 @@ beforeAll(async () => {
   writeFileSync(generatedImage, "generated image bytes");
   writeFileSync(userAttachment, "%PDF shared from the phone\n", { mode: 0o600 });
   writeFileSync(
-    join(home, ".jlfbot", "messages-test-linked-file-room-thread.json"),
+    join(home, ".aslbot", "messages-test-linked-file-room-thread.json"),
     JSON.stringify({
       activeLeafId: "user-outside-file-message",
       messages: [
@@ -619,7 +619,7 @@ beforeAll(async () => {
   // Goal orchestration is process-local. This durable card simulates either
   // a manual or scheduled goal whose process exited before it could settle.
   writeFileSync(
-    join(home, ".jlfbot", "messages-test-goal-restart-thread.json"),
+    join(home, ".aslbot", "messages-test-goal-restart-thread.json"),
     JSON.stringify({
       activeLeafId: "settled-routine-goal-card",
       messages: [
@@ -663,7 +663,7 @@ beforeAll(async () => {
     }),
   );
   writeFileSync(
-    join(home, ".jlfbot", "routines.json"),
+    join(home, ".aslbot", "routines.json"),
     JSON.stringify({
       version: 1,
       routines: [],
@@ -693,7 +693,7 @@ beforeAll(async () => {
   // A room transcript carrying an approval that outlived its turn: the card
   // is durable, but busyBotId is in-memory only and never survives a restart.
   writeFileSync(
-    join(home, ".jlfbot", "messages-test-stranded-room-thread.json"),
+    join(home, ".aslbot", "messages-test-stranded-room-thread.json"),
     JSON.stringify({
       activeLeafId: "stranded-card",
       messages: [
@@ -720,7 +720,7 @@ beforeAll(async () => {
   // A room holding an approval nobody has answered yet, so "Cancel turn"
   // has something open to close.
   writeFileSync(
-    join(home, ".jlfbot", "messages-test-cancel-room-thread.json"),
+    join(home, ".aslbot", "messages-test-cancel-room-thread.json"),
     JSON.stringify({
       activeLeafId: "cancel-card",
       messages: [
@@ -1074,10 +1074,10 @@ describe("harness HTTP API", () => {
     expect(room.messages.find(
       (message: { id: string }) => message.id === "restarted-goal-card",
     )).toMatchObject({
-      text: "Goal failed: JLFBot restarted before this goal finished.",
+      text: "Goal failed: ASLBot restarted before this goal finished.",
       goalRun: {
         status: "failed",
-        detail: "JLFBot restarted before this goal finished.",
+        detail: "ASLBot restarted before this goal finished.",
         turnCount: 2,
         finishedAt: expect.any(Number),
       },
@@ -1174,7 +1174,7 @@ describe("harness HTTP API", () => {
       req.end();
     });
     expect(probe.status).toBe(200);
-    expect(probe.body).toEqual({ app: "jlfbot" });
+    expect(probe.body).toEqual({ app: "aslbot" });
     // the brand is public too: the sign-in page is branded before anyone has a session
     const brand = await new Promise<{ status: number; body: unknown }>((resolve, reject) => {
       const req = request({ hostname: "127.0.0.1", port: PORT, path: "/api/brand", headers: { host: "example.com" } }, (res) => {
@@ -1186,7 +1186,7 @@ describe("harness HTTP API", () => {
       req.end();
     });
     expect(brand.status).toBe(200);
-    expect(Reflect.get(Object(Reflect.get(Object(brand.body), "brand")), "name")).toBe("JLFBot");
+    expect(Reflect.get(Object(Reflect.get(Object(brand.body), "brand")), "name")).toBe("ASLBot");
     expect(await statusWithHeaders({ origin: "https://example.com" })).toBe(403);
     expect(await statusWithHeaders({ host: `127.0.0.2:${PORT}` })).toBe(200);
     expect(await statusWithHeaders({ host: `[::1]:${PORT}` })).toBe(200);
@@ -1204,7 +1204,7 @@ describe("harness HTTP API", () => {
   it("identifies itself on /api/health", async () => {
     const { status, body } = await api("GET", "/api/health");
     expect(status).toBe(200);
-    expect(body.app).toBe("jlfbot");
+    expect(body.app).toBe("aslbot");
     expect(typeof body.pid).toBe("number");
     expect(body.static).toBe(true);
   });
@@ -1217,7 +1217,7 @@ describe("harness HTTP API", () => {
       env: {
         ...(process.env.PATH ? { PATH: process.env.PATH } : {}),
         ...(process.env.SystemRoot ? { SystemRoot: process.env.SystemRoot } : {}),
-        JLFBOT_DATA_DIR: join(home, ".jlfbot"),
+        JLFBOT_DATA_DIR: join(home, ".aslbot"),
         JLFBOT_PORT: String(contenderPort),
         JLFBOT_STATIC_DIR: staticDir,
       },
@@ -1248,7 +1248,7 @@ describe("harness HTTP API", () => {
     const root = await fetch(`${BASE}/`);
     expect(root.status).toBe(200);
     expect(root.headers.get("content-type")).toBe("text/html");
-    expect(await root.text()).toContain("Packaged JLFBot");
+    expect(await root.text()).toContain("Packaged ASLBot");
 
     const asset = await fetch(`${BASE}/assets/smoke.css`);
     expect(asset.status).toBe(200);
@@ -1258,7 +1258,7 @@ describe("harness HTTP API", () => {
     const spa = await fetch(`${BASE}/settings/desktop`);
     expect(spa.status).toBe(200);
     expect(spa.headers.get("content-type")).toBe("text/html");
-    expect(await spa.text()).toContain("Packaged JLFBot");
+    expect(await spa.text()).toContain("Packaged ASLBot");
 
     const unknownApi = await api("GET", "/api/not-a-real-route");
     expect(unknownApi.status).toBe(404);
@@ -2523,7 +2523,7 @@ describe("harness HTTP API", () => {
       expect((await api("PATCH", "/api/config", { browserProfiles: [{ id, name: "Cleanup fixture" }] })).status).toBe(200);
       expect((await api("PATCH", `/api/bots/${bot.id}`, { browserProfile: id })).status).toBe(200);
     }
-    const key = join(home, ".jlfbot", "browser-engine-key");
+    const key = join(home, ".aslbot", "browser-engine-key");
     const backup = `${key}.fixture-backup`;
     const failureMarker = join(home, "browser-clear-fails");
     const hadKey = existsSync(key);
@@ -2533,7 +2533,7 @@ describe("harness HTTP API", () => {
     } else {
       writeFileSync(failureMarker, "fail");
     }
-    const journal = () => JSON.parse(readFileSync(join(home, ".jlfbot", "browser-cleanups.json"), "utf8")) as Array<{ id: string; phase: string }>;
+    const journal = () => JSON.parse(readFileSync(join(home, ".aslbot", "browser-cleanups.json"), "utf8")) as Array<{ id: string; phase: string }>;
     try {
       const deleted = target === "bot"
         ? await api("DELETE", `/api/bots/${bot.id}`)
@@ -2646,7 +2646,7 @@ describe("harness HTTP API", () => {
       expect(await record()).toMatchObject({ id: requestId, name: "Build machine", section: null, problem: expect.stringMatching(/fixture refused create/) });
       expect(managedBoxCreateBodies).toHaveLength(1);
       expect(managedBoxCreateBodies[0]).toMatchObject({ noEnv: true });
-      const persisted = JSON.parse(readFileSync(join(home, ".jlfbot", "team-computers.json"), "utf8"));
+      const persisted = JSON.parse(readFileSync(join(home, ".aslbot", "team-computers.json"), "utf8"));
       expect(persisted.computers).toContainEqual(expect.objectContaining({ id: requestId, name: "Build machine", section: null }));
       expect((await api("POST", "/api/team-computers", { requestId, name: "Different machine", acknowledgeCost: true })).status).toBe(409);
       expect((await api("POST", `/api/team-computers/${requestId}/provision`, {})).status).toBe(400);
@@ -2687,7 +2687,7 @@ describe("harness HTTP API", () => {
       expect((await api("PATCH", `/api/team-computers/${requestId}`, { section, acknowledgeSharedAccess: true })).status).toBe(200);
       expect(await record()).toMatchObject({ id: requestId, section, state: "idle" });
       expect((await api("GET", "/api/bots?messages=0")).body.bots.find((entry: { id: string }) => entry.id === bot.id)).toMatchObject({ computer: "off", section });
-      const saved = JSON.parse(readFileSync(join(home, ".jlfbot", "team-computers.json"), "utf8"));
+      const saved = JSON.parse(readFileSync(join(home, ".aslbot", "team-computers.json"), "utf8"));
       expect(saved.computers).toContainEqual(expect.objectContaining({ id: requestId, section }));
       expect((await api("POST", `/api/team-computers/${requestId}/join`, {})).status).toBe(409);
       expect((await api("POST", `/api/team-computers/${requestId}/control`, { action: "take" })).status).toBe(200);
@@ -4169,7 +4169,7 @@ describe("harness HTTP API", () => {
 
   it("keeps Full and Custom bots on Codex when the paired model route changes providers", async () => {
     const isolatedHome = mkdtempSync(join(tmpdir(), "jlfbot-trusted-mode-model-"));
-    const isolatedData = join(isolatedHome, ".jlfbot");
+    const isolatedData = join(isolatedHome, ".aslbot");
     const isolatedStatic = join(isolatedHome, "static");
     const isolatedPort = await freePortBlock([0, 1]);
     mkdirSync(join(isolatedStatic, "assets"), { recursive: true });
@@ -4353,7 +4353,7 @@ describe("harness HTTP API", () => {
     expect(markdownExport.body.markdown).toContain("Give this file to your Chief of Staff");
     expect(markdownExport.body.markdown).not.toMatch(/Archived|autoApprove|alwaysAllow|modelSelection|threadId/);
     expect((await api("GET", "/api/bots")).body.groups).toHaveLength(roomsBefore);
-    expect((await api("POST", "/api/teams/export", {})).body.team.name).toBe("My JLFBot Team");
+    expect((await api("POST", "/api/teams/export", {})).body.team.name).toBe("My ASLBot Team");
 
     const stream = await openSse(`${BASE}/api/events`);
     try {
@@ -4508,7 +4508,7 @@ describe("harness HTTP API", () => {
         tagline: "Find and explain the signal.",
         summary: "A complete two-bot signal workflow.",
         category: "Research",
-        author: { name: "JLFBot" },
+        author: { name: "ASLBot" },
         license: "MIT",
         outcomes: ["Produce a concise signal brief."],
         setupMinutes: 4,
@@ -4923,7 +4923,7 @@ describe("harness HTTP API", () => {
         .find((message: { id: string }) => message.id === messageId);
       expect(directCard).toMatchObject({
         kind: "secret",
-        text: "Securely provide the OpenAI API key from JLFBot on your phone or computer. It is never added to chat.",
+        text: "Securely provide the OpenAI API key from ASLBot on your phone or computer. It is never added to chat.",
       });
       expect(directCard.secret.description).toContain(
         `${bot.name} can use it but never read it back.`,
@@ -5015,7 +5015,7 @@ describe("harness HTTP API", () => {
 
   it("keeps credential-card ownership stable while an encrypted phone save is in flight", async () => {
     const isolatedHome = mkdtempSync(join(tmpdir(), "jlfbot-phone-secret-races-"));
-    const isolatedData = join(isolatedHome, ".jlfbot");
+    const isolatedData = join(isolatedHome, ".aslbot");
     const isolatedStatic = join(isolatedHome, "static");
     const isolatedGate = join(isolatedHome, "credential-gate");
     const isolatedPort = await freePortBlock([0, 1]);
@@ -5399,7 +5399,7 @@ describe("harness HTTP API", () => {
         modelSelection: { instanceId: "ghost", model: "ghost-1", effort: "high" },
       });
       expect(bot.messages[0].text).toContain("Pathfinder");
-      expect(bot.messages[0].text).not.toContain("JLFBot");
+      expect(bot.messages[0].text).not.toContain("ASLBot");
     } finally {
       await removeBot(bot.id);
     }
@@ -6089,7 +6089,7 @@ describe("harness HTTP API", () => {
         (candidate: { id: string }) => candidate.id === botId,
       );
       expect(bot).not.toHaveProperty("voice");
-      const disk = JSON.parse(readFileSync(join(home, ".jlfbot", "config.json"), "utf8"));
+      const disk = JSON.parse(readFileSync(join(home, ".aslbot", "config.json"), "utf8"));
       expect(disk.tts).toMatchObject({ provider, voice: "" });
     } finally {
       if (botId) await removeBot(botId);
@@ -6099,7 +6099,7 @@ describe("harness HTTP API", () => {
 
   it("does not switch voice providers when per-agent voices cannot be cleared", async () => {
     let botId = "";
-    const botsPath = join(home, ".jlfbot", "bots.json");
+    const botsPath = join(home, ".aslbot", "bots.json");
     const backupPath = `${botsPath}.voice-switch-test`;
     let blocked = false;
     try {
@@ -6192,7 +6192,7 @@ describe("harness HTTP API", () => {
       expect(rotated.status).toBe(200);
       expect(rotated.body.box).toEqual({ configured: true });
       if (provisioned) {
-        const journal = readFileSync(join(home, ".jlfbot", "box-create-requests.json"), "utf8");
+        const journal = readFileSync(join(home, ".aslbot", "box-create-requests.json"), "utf8");
         expect(journal).toContain(managedBoxCreateId);
       }
     } finally {
@@ -6225,7 +6225,7 @@ describe("harness HTTP API", () => {
       managedBoxRows = [];
       managedBoxCreatedIds.delete(managedBoxCreateId);
       expect((await api("PUT", "/api/config", { box: { token: "" } })).status).toBe(200);
-      const journal = JSON.parse(readFileSync(join(home, ".jlfbot", "box-create-requests.json"), "utf8"));
+      const journal = JSON.parse(readFileSync(join(home, ".aslbot", "box-create-requests.json"), "utf8"));
       expect(journal.requests.some((entry: { botId?: string }) => entry.botId === bot.id)).toBe(false);
 
       // A stale receipt used to make this impossible: the new token was asked
@@ -6435,7 +6435,7 @@ describe("harness HTTP API", () => {
 
     const enabled = await api("PATCH", "/api/mcp/servers/fixture", { enabled: true });
     expect(enabled.body.servers[0].enabled).toBe(true);
-    const disk = JSON.parse(readFileSync(join(home, ".jlfbot", "config.json"), "utf8"));
+    const disk = JSON.parse(readFileSync(join(home, ".aslbot", "config.json"), "utf8"));
     expect(disk.mcpServers.fixture.env).toEqual({ FIXTURE_TOKEN: secret, NEXT: "fresh" });
 
     const reserved = await api("POST", "/api/mcp/servers", { name: "computer", command: "evil" });
@@ -6471,7 +6471,7 @@ describe("harness HTTP API", () => {
       expect(updated.status).toBe(200);
       expect(updated.body.servers[0]).toMatchObject({ type: "sse", headerKeys: ["Authorization", "X-Org"], enabled: true });
       expect(JSON.stringify(updated.body)).not.toContain(secret);
-      const disk = JSON.parse(readFileSync(join(home, ".jlfbot", "config.json"), "utf8"));
+      const disk = JSON.parse(readFileSync(join(home, ".aslbot", "config.json"), "utf8"));
       expect(disk.mcpServers.docs).toEqual({ type: "sse", url: fake.url, headers: { Authorization: secret, "X-Org": "acme" }, enabled: true });
 
       const bad = await api("POST", "/api/mcp/servers", { name: "nowhere", url: "docs.example/mcp" });
@@ -6552,7 +6552,7 @@ describe("harness HTTP API", () => {
     const after = await api("GET", "/api/config");
     expect(after.body.rooms).toEqual({ turnTimeoutMinutes: 20 });
 
-    const disk = JSON.parse(readFileSync(join(home, ".jlfbot", "config.json"), "utf8"));
+    const disk = JSON.parse(readFileSync(join(home, ".aslbot", "config.json"), "utf8"));
     expect(disk.rooms).toEqual({ turnTimeoutMinutes: 20 });
 
     await api("PUT", "/api/config", { rooms: { turnTimeoutMinutes: 5 } });
@@ -6560,7 +6560,7 @@ describe("harness HTTP API", () => {
 
   it("cards every ask when Claude's reviewer never started, says so once, and can hand the allow to Claude for the session", async () => {
     // A bot on Approve for me with Haiku 4.5: the CLI takes `auto`, runs
-    // Manual, and asks about everything. JLFBot passes that through —
+    // Manual, and asks about everything. ASLBot passes that through —
     // no rule of its own answers — and says why, once.
     const bot = (await api("POST", "/api/bots", { name: "Quill" })).body.bot;
     const conns: Socket[] = [];
@@ -6667,8 +6667,8 @@ describe("harness HTTP API", () => {
       expect((await api("POST", `/api/bots/${bot.id}/messages`, { text: "hello" })).status).toBe(202);
       const seen = await readJsonFileWhenReady<{ systemPrompt?: string }>(fakeClaudeDump, 15_000);
       const system: string = seen.systemPrompt ?? "";
-      expect(system.startsWith("You are Kiwi, a personal bot in JLFBot. Role: Tracker.")).toBe(true);
-      const persona = "You are Kiwi, a personal bot in JLFBot. Role: Tracker.";
+      expect(system.startsWith("You are Kiwi, a personal bot in ASLBot. Role: Tracker.")).toBe(true);
+      const persona = "You are Kiwi, a personal bot in ASLBot. Role: Tracker.";
       const afterPersona = system.slice(persona.length);
       expect(afterPersona.startsWith("\n\nYour standing instructions follow.")).toBe(true);
       expect(system).toContain("--- BEGIN STANDING INSTRUCTIONS (SOUL.md, 28 bytes) ---\nFile bugs. Never file noise.\n--- END STANDING INSTRUCTIONS ---");
@@ -6730,7 +6730,7 @@ describe("harness HTTP API", () => {
       rmSync(fakeClaudeDump, { force: true });
       expect((await api("POST", `/api/bots/${bot.id}/messages`, { text: "hello" })).status).toBe(202);
       let system = (await readJsonFileWhenReady<{ systemPrompt: string }>(fakeClaudeDump, 15_000)).systemPrompt;
-      expect(system.startsWith("You are Blank, a personal bot in JLFBot.")).toBe(true);
+      expect(system.startsWith("You are Blank, a personal bot in ASLBot.")).toBe(true);
       expect(system).not.toContain("at most four questions");
       expect(system).toContain("propose_profile");
 
@@ -6799,7 +6799,7 @@ describe("harness HTTP API", () => {
         soul: "Record text.",
       })).status).toBe(200);
       // An edit made directly to the mirror file, bypassing the app entirely.
-      writeFileSync(join(home, ".jlfbot", "bots", bot.id, "SOUL.md"), "File text.");
+      writeFileSync(join(home, ".aslbot", "bots", bot.id, "SOUL.md"), "File text.");
       rmSync(fakeClaudeDump, { force: true });
       expect((await api("POST", `/api/bots/${bot.id}/messages`, { text: "hello" })).status).toBe(202);
       const seen = await readJsonFileWhenReady<{ systemPrompt?: string }>(fakeClaudeDump, 15_000);
@@ -6873,7 +6873,7 @@ describe("harness HTTP API", () => {
     expect(before.status).toBe(200);
     expect(before.body.features).toEqual({ browser: false, skillAuthoring: true, showToolCalls: false, sharedComputers: false, claudeUserMcp: false });
     // the default is the absence of the key: nothing is written until the toggle is used
-    const untouched = JSON.parse(readFileSync(join(home, ".jlfbot", "config.json"), "utf8"));
+    const untouched = JSON.parse(readFileSync(join(home, ".aslbot", "config.json"), "utf8"));
     expect(untouched.features?.skillAuthoring).toBeUndefined();
     // computer sharing has no toggle at all: only a hand-edited config.json
     // can set it, so the shipped default is reported off and never written
@@ -6885,7 +6885,7 @@ describe("harness HTTP API", () => {
     expect(saved.status).toBe(200);
     expect(saved.body.features).toEqual({ browser: false, skillAuthoring: false, showToolCalls: false, sharedComputers: false, claudeUserMcp: false });
 
-    const disk = JSON.parse(readFileSync(join(home, ".jlfbot", "config.json"), "utf8"));
+    const disk = JSON.parse(readFileSync(join(home, ".aslbot", "config.json"), "utf8"));
     // Earlier browser coverage may have persisted its own toggle. Opting out
     // of skill authoring must preserve those sibling settings, not erase them.
     expect(disk.features).toEqual({ ...untouched.features, skillAuthoring: false });
@@ -7279,7 +7279,7 @@ describe("harness HTTP API", () => {
   }, 60_000);
   it("reconciles a committed crash-stale bot reference before ACK and profile-id reuse", async () => {
     const isolatedHome = mkdtempSync(join(tmpdir(), "jlfbot-browser-cleanup-restart-"));
-    const isolatedData = join(isolatedHome, ".jlfbot");
+    const isolatedData = join(isolatedHome, ".aslbot");
     const isolatedStatic = join(isolatedHome, "static");
     const isolatedPort = await freePortBlock([0, 1]);
     mkdirSync(join(isolatedStatic, "assets"), { recursive: true });
@@ -7397,7 +7397,7 @@ describe("harness HTTP API", () => {
         browserProfiles: [{ id: "client", name: "Client" }],
       })).status).toBe(200);
       expect((await api("PATCH", `/api/bots/${bot.id}`, { browserProfile: "client" })).body.bot.browserProfile).toBe("client");
-      const config = JSON.parse(readFileSync(join(home, ".jlfbot", "config.json"), "utf8"));
+      const config = JSON.parse(readFileSync(join(home, ".aslbot", "config.json"), "utf8"));
       const profile = config.browserProfiles.find((entry: { id: string }) => entry.id === "client");
       rmSync(join(home, "browser-calls.jsonl"), { force: true });
       expect((await api("PATCH", "/api/config", { browserProfiles: [] })).status).toBe(200);
@@ -7547,7 +7547,7 @@ describe("harness HTTP API", () => {
     expect(invalid.status).toBe(400);
     expect(invalid.body.error).toContain("localVm.maxInstances");
 
-    const disk = JSON.parse(readFileSync(join(home, ".jlfbot", "config.json"), "utf8"));
+    const disk = JSON.parse(readFileSync(join(home, ".aslbot", "config.json"), "utf8"));
     expect(disk.localVm).toEqual({ mode: "per-bot", maxInstances: 3 });
     await api("PATCH", "/api/config", { localVm: { mode: "shared", maxInstances: 2 } });
   });
@@ -7572,7 +7572,7 @@ describe("harness HTTP API", () => {
 
       const removed = await api("POST", `/api/bots/${bot.id}/local-computer/remove`, {});
       expect(removed.status).toBe(409);
-      expect(removed.body.error).toMatch(/not created by JLFBot.*remove it manually/i);
+      expect(removed.body.error).toMatch(/not created by ASLBot.*remove it manually/i);
       expect(readFileSync(fakeDockerLog, "utf8").split("\n")).not.toContain(
         `rm -f ${status.body.container_name}`,
       );
@@ -7810,7 +7810,7 @@ describe("harness HTTP API", () => {
         .find((message: { id: string }) => message.id === messageId);
       expect(roomCard).toMatchObject({
         kind: "secret",
-        text: "Securely provide the OpenAI API key from JLFBot on your phone or computer. It is never added to chat.",
+        text: "Securely provide the OpenAI API key from ASLBot on your phone or computer. It is never added to chat.",
         from: { botId: second.id, name: second.name, color: second.color },
       });
 
@@ -8314,7 +8314,7 @@ describe("harness HTTP API", () => {
   });
 
   it("keeps a proposed profile change inert until its card is confirmed, then records history", async () => {
-    const soulFileOf = (botId: string) => join(home, ".jlfbot", "bots", botId, "SOUL.md");
+    const soulFileOf = (botId: string) => join(home, ".aslbot", "bots", botId, "SOUL.md");
     const bot = (await api("POST", "/api/bots", { name: "Scout" })).body.bot;
     try {
       await api("PATCH", `/api/bots/${bot.id}`, { modelSelection: { instanceId: "claude", model: "claude-sonnet-5" } });
@@ -8645,7 +8645,7 @@ describe("harness HTTP API", () => {
       );
       const skillPath = join(
         home,
-        ".jlfbot",
+        ".aslbot",
         "workspaces",
         bot.id,
         ".agents",
@@ -8701,7 +8701,7 @@ describe("harness HTTP API", () => {
       // composer behind a proposal that can no longer be applied.
       const missingStage = await stage("reviewed-skill-missing-stage");
       writeFileSync(
-        join(home, ".jlfbot", "skill-state", bot.id, "staged.json"),
+        join(home, ".aslbot", "skill-state", bot.id, "staged.json"),
         `${JSON.stringify({ writes: {} }, null, 2)}\n`,
       );
       expect(await api("POST", `/api/threads/${bot.threadId}/respond`, {
@@ -8806,7 +8806,7 @@ describe("harness HTTP API", () => {
     expect(saved.body.profile).toEqual({ name: "External Store", email: "" });
     expect(JSON.stringify(saved.body)).not.toContain("ak_good");
 
-    const disk = JSON.parse(readFileSync(join(home, ".jlfbot", "config.json"), "utf8"));
+    const disk = JSON.parse(readFileSync(join(home, ".aslbot", "config.json"), "utf8"));
     expect(disk.composio).toMatchObject({ apiKey: "", sessionId: "trs_config_test" });
     expect(disk.opencodeGo).toEqual({ apiKey: "" });
     expect(disk.profile).toEqual({ name: "External Store" });
@@ -8905,7 +8905,7 @@ describe("harness HTTP API", () => {
   });
 
   it.skipIf(process.platform === "win32")("stores the credentials file with owner-only permissions", () => {
-    expect(statSync(join(home, ".jlfbot", "config.json")).mode & 0o777).toBe(0o600);
+    expect(statSync(join(home, ".aslbot", "config.json")).mode & 0o777).toBe(0o600);
   });
 
   it("stores and echoes the user profile (not write-only, unlike keys)", async () => {
@@ -8965,7 +8965,7 @@ describe("harness HTTP API", () => {
     expect((await api("DELETE", `/api/webhooks/${created.body.webhook.id}`)).status).toBe(200);
     expect((await api("GET", "/api/webhooks")).body.webhooks).toHaveLength(0);
     if (process.platform !== "win32") {
-      expect(statSync(join(home, ".jlfbot", "webhooks.json")).mode & 0o777).toBe(0o600);
+      expect(statSync(join(home, ".aslbot", "webhooks.json")).mode & 0o777).toBe(0o600);
     }
   });
 
@@ -9007,9 +9007,9 @@ describe("harness HTTP API", () => {
         openaiConfigured: true, xaiConfigured: false, customKeyConfigured: true });
       for (const secret of ["openai-avatar-fixture", "custom-avatar-fixture"]) {
         expect(JSON.stringify(saved.body)).not.toContain(secret);
-        expect(readFileSync(join(home, ".jlfbot", "config.json"), "utf8")).not.toContain(secret);
+        expect(readFileSync(join(home, ".aslbot", "config.json"), "utf8")).not.toContain(secret);
       }
-      const disk = JSON.parse(readFileSync(join(home, ".jlfbot", "config.json"), "utf8"));
+      const disk = JSON.parse(readFileSync(join(home, ".aslbot", "config.json"), "utf8"));
       expect(disk.imageGen).toMatchObject({ key: "", customApiKey: "", provider: "custom" });
 
       const preset = await api("PUT", "/api/config", { imageGen: { provider: "openai" } });
@@ -9154,7 +9154,7 @@ describe("bot memory API", () => {
       req.end();
     });
 
-  const workspaceOf = (botId: string) => join(home, ".jlfbot", "workspaces", botId);
+  const workspaceOf = (botId: string) => join(home, ".aslbot", "workspaces", botId);
 
   // The recall eval from docs/memory-comparison.md: a bot that did work in
   // an earlier task can find it from a later one, without the user pasting
@@ -9539,7 +9539,7 @@ describe("bot memory API", () => {
       // as leaked content and not depend on what happens to exist
       mkdirSync(workspaceOf(bot.id), { recursive: true });
       writeFileSync(join(workspaceOf(bot.id), "MEMORY.md"), "TOP-SECRET-MARKER memory");
-      writeFileSync(join(home, ".jlfbot", "secret.md"), "TOP-SECRET-MARKER sibling");
+      writeFileSync(join(home, ".aslbot", "secret.md"), "TOP-SECRET-MARKER sibling");
 
       for (const name of [
         "..%2F..%2Fsecret.md", // encoded slashes
@@ -9564,7 +9564,7 @@ describe("bot memory API", () => {
     }
   });
 
-  const soulFileOf = (botId: string) => join(home, ".jlfbot", "bots", botId, "SOUL.md");
+  const soulFileOf = (botId: string) => join(home, ".aslbot", "bots", botId, "SOUL.md");
 
   it("round-trips soul through both PATCH routes and mirrors it to SOUL.md", async () => {
     const bot = (await api("POST", "/api/bots")).body.bot;
@@ -9587,12 +9587,12 @@ describe("bot memory API", () => {
     } finally {
       await removeBot(bot.id);
     }
-    expect(existsSync(join(home, ".jlfbot", "bots", bot.id))).toBe(false);
+    expect(existsSync(join(home, ".aslbot", "bots", bot.id))).toBe(false);
   });
 
   it("keeps mixed-request runtime revocations effective when profile persistence fails", async () => {
     const bot = (await api("POST", "/api/bots", { name: "Mixed profile safety" })).body.bot;
-    const botsFile = join(home, ".jlfbot", "bots.json");
+    const botsFile = join(home, ".aslbot", "bots.json");
     let saved: string | undefined;
     try {
       expect((await api("PATCH", `/api/bots/${bot.id}`, { soul: "old", browser: true, browserProfile: "guest" })).status).toBe(200);
@@ -9710,7 +9710,7 @@ describe("bot memory API", () => {
 
   it("refuses redacted history restores without changing SOUL and still restores exact safe text", async () => {
     const bot = (await api("POST", "/api/bots", { name: "Redacted history" })).body.bot;
-    const file = join(home, ".jlfbot", "bots", bot.id, "history.ndjson");
+    const file = join(home, ".aslbot", "bots", bot.id, "history.ndjson");
     const exact = "  Be brief.\n\nKeep this whitespace.  \n";
     const current = "Current instructions.";
     try {
@@ -9782,7 +9782,7 @@ describe("bot memory API", () => {
       expect(before.body.sections[0]).toEqual({
         id: "persona",
         label: "Identity",
-        text: "You are Kiwi, a personal bot in JLFBot. Role: Tracker. About: Files bugs.",
+        text: "You are Kiwi, a personal bot in ASLBot. Role: Tracker. About: Files bugs.",
         bytes: 73,
       });
       expect(before.body.sections.map((s: { id: string }) => s.id)).not.toContain("soul");
@@ -10032,7 +10032,7 @@ describe("message pages", () => {
 
   it("downloads only a file linked by the exact stored bot message", async () => {
     const threadId = "test-linked-file-room-thread";
-    const linkedFile = join(home, ".jlfbot", "workspaces", "test-bot-a", "phone report.md");
+    const linkedFile = join(home, ".aslbot", "workspaces", "test-bot-a", "phone report.md");
     const response = await fetch(
       `${BASE}/api/threads/${threadId}/messages/linked-file-message/file`,
       {
@@ -10059,7 +10059,7 @@ describe("message pages", () => {
     expect((await api(
       "POST",
       `/api/threads/${threadId}/messages/linked-file-message/file`,
-      { path: join(home, ".jlfbot", "workspaces", "test-bot-a", "other.md") },
+      { path: join(home, ".aslbot", "workspaces", "test-bot-a", "other.md") },
     )).status).toBe(403);
     expect((await fetch(`${BASE}/api/threads/${threadId}/messages/no-such-message/file`, {
       method: "POST",
@@ -10069,7 +10069,7 @@ describe("message pages", () => {
   });
 
   it("downloads a structured generated image from an image-only reply", async () => {
-    const image = join(home, ".jlfbot", "attachments", "generated.png");
+    const image = join(home, ".aslbot", "attachments", "generated.png");
     const response = await fetch(`${BASE}/api/threads/test-linked-file-room-thread/messages/generated-image-message/file`, {
       method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ path: image }),
     });
@@ -10079,17 +10079,17 @@ describe("message pages", () => {
   });
 
   it("confines structured generated images to their message and private image files", async () => {
-    const image = join(home, ".jlfbot", "attachments", "generated.png");
+    const image = join(home, ".aslbot", "attachments", "generated.png");
     const route = (id: string) => `/api/threads/test-linked-file-room-thread/messages/${id}/file`;
     expect((await api("POST", route("prose-file-message"), { path: image })).status).toBe(403);
-    expect((await api("POST", route("generated-image-message"), { path: join(home, ".jlfbot", "attachments", "other.png") })).status).toBe(403);
-    expect((await api("POST", route("outside-generated-image-message"), { path: join(home, ".jlfbot", "workspaces", "test-bot-a", "preview.png") })).status).toBe(403);
-    expect((await api("POST", route("not-image-attachment-message"), { path: join(home, ".jlfbot", "attachments", "shared-notes.pdf") })).status).toBe(415);
+    expect((await api("POST", route("generated-image-message"), { path: join(home, ".aslbot", "attachments", "other.png") })).status).toBe(403);
+    expect((await api("POST", route("outside-generated-image-message"), { path: join(home, ".aslbot", "workspaces", "test-bot-a", "preview.png") })).status).toBe(403);
+    expect((await api("POST", route("not-image-attachment-message"), { path: join(home, ".aslbot", "attachments", "shared-notes.pdf") })).status).toBe(415);
   });
 
   it("downloads an image rendered by the exact stored bot message", async () => {
     const threadId = "test-linked-file-room-thread";
-    const linkedImage = join(home, ".jlfbot", "workspaces", "test-bot-a", "preview.png");
+    const linkedImage = join(home, ".aslbot", "workspaces", "test-bot-a", "preview.png");
     const response = await fetch(`${BASE}/api/threads/${threadId}/messages/linked-image-message/file`, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -10123,7 +10123,7 @@ describe("message pages", () => {
 
   it("downloads an exact user attachment only from the private attachment store", async () => {
     const threadId = "test-linked-file-room-thread";
-    const shared = join(home, ".jlfbot", "attachments", "shared-notes.pdf");
+    const shared = join(home, ".aslbot", "attachments", "shared-notes.pdf");
     const response = await fetch(
       `${BASE}/api/threads/${threadId}/messages/user-attached-file-message/file`,
       {
@@ -10149,12 +10149,12 @@ describe("message pages", () => {
     expect((await api(
       "POST",
       `/api/threads/${threadId}/messages/user-attached-file-message/file`,
-      { path: join(home, ".jlfbot", "attachments", "different.pdf") },
+      { path: join(home, ".aslbot", "attachments", "different.pdf") },
     )).status).toBe(403);
     expect((await api(
       "POST",
       `/api/threads/${threadId}/messages/user-outside-file-message/file`,
-      { path: join(home, ".jlfbot", "workspaces", "test-bot-a", "phone report.md") },
+      { path: join(home, ".aslbot", "workspaces", "test-bot-a", "phone report.md") },
     )).status).toBe(403);
   });
 
@@ -10341,13 +10341,13 @@ describe("resumable event stream", () => {
 
 describe("instance CLI override API", () => {
   it("round-trips bounded per-instance icons without changing the driver", async () => {
-    const before = JSON.parse(readFileSync(join(home, ".jlfbot", "config.json"), "utf8"));
+    const before = JSON.parse(readFileSync(join(home, ".aslbot", "config.json"), "utf8"));
     const preset = await api("PATCH", "/api/instances/ghost/icon", { icon: { kind: "preset", preset: "deepseek" } });
     expect(preset.status).toBe(200);
     expect(preset.body.instances.find((i: any) => i.instanceId === "ghost")).toMatchObject({
       driverKind: "not-a-real-driver", icon: { kind: "preset", preset: "deepseek" },
     });
-    const savedPreset = JSON.parse(readFileSync(join(home, ".jlfbot", "config.json"), "utf8"));
+    const savedPreset = JSON.parse(readFileSync(join(home, ".aslbot", "config.json"), "utf8"));
     expect(savedPreset.instances.ghost.icon).toEqual({ kind: "preset", preset: "deepseek" });
     expect(savedPreset.instances.claude).toEqual(before.instances.claude);
 
@@ -10364,7 +10364,7 @@ describe("instance CLI override API", () => {
     const reset = await api("PATCH", "/api/instances/ghost/icon", { icon: null });
     expect(reset.status).toBe(200);
     expect(reset.body.instances.find((i: any) => i.instanceId === "ghost").icon).toBeUndefined();
-    expect(JSON.parse(readFileSync(join(home, ".jlfbot", "config.json"), "utf8")).instances.ghost.icon).toBeUndefined();
+    expect(JSON.parse(readFileSync(join(home, ".aslbot", "config.json"), "utf8")).instances.ghost.icon).toBeUndefined();
   });
 
   it("round-trips a set, clear, and rejects bad input", async () => {

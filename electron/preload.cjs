@@ -77,7 +77,7 @@ const bridge = {
     ipcRenderer.on("desktop:capabilities-changed", handler);
     return () => ipcRenderer.removeListener("desktop:capabilities-changed", handler);
   },
-  /** Pair this desktop app to another JLFBot host. The bearer remains in
+  /** Pair this desktop app to another ASLBot host. The bearer remains in
    * the main process and is never returned over this bridge. */
   remoteClient: {
     active: desktopRemoteClient,
@@ -237,7 +237,7 @@ const bridge = {
   /** Writes the redacted diagnostics report to a user-chosen file; resolves
    * the path, or null when the save dialog was cancelled. */
   exportDiagnostics: () => ipcRenderer.invoke("desktop:export-diagnostics"),
-  /** Ask where to save a bot-created file (inside ~/.jlfbot), copy it
+  /** Ask where to save a bot-created file (inside ~/.aslbot), copy it
    * there and reveal it. Returns the chosen path, or null if the user
    * cancelled the dialog. The chat bubble shows the
    * rejection text verbatim, so strip the "Error invoking remote method"

@@ -1,12 +1,12 @@
 # Ubuntu Desktop
 
-JLFBot has an Ubuntu 24.04 LTS x86_64 desktop beta. The Electron package embeds the harness server, so
+ASLBot has an Ubuntu 24.04 LTS x86_64 desktop beta. The Electron package embeds the harness server, so
 installed builds do not require Node, pnpm, Swift, or a terminal at runtime. For giving a bot the same kind
 of Linux desktop on your own server instead of this machine, see [byo-vps.md](byo-vps.md).
 
 ## What works
 
-- The native Electron window and embedded JLFBot server on GNOME Xorg and GNOME Wayland.
+- The native Electron window and embedded ASLBot server on GNOME Xorg and GNOME Wayland.
 - Local Claude, Codex, Grok, Gemini, and other configured agent CLIs.
 - Chat, streaming turns, approvals, bot-to-bot communication, and local data storage.
 - Composio connected apps and Box cloud computers.
@@ -22,22 +22,22 @@ The local preview does **not** give the bot control of this computer by itself. 
 the global **Enable local control** choice and assigning a bot to **This computer**; every action still enters the
 approval flow. On Wayland, local control is disabled and legacy opt-ins are cleared automatically. Automatic Wayland
 helper installation, Linux dictation, and ARM64 remain unavailable and fail closed; follow their
-progress in [issue #29](https://github.com/jaylfronteras/JLFBot/issues/29) and the safety hold in
-[issue #345](https://github.com/jaylfronteras/JLFBot/issues/345). Bundled
-CUA supply-chain work is tracked in [issue #113](https://github.com/jaylfronteras/JLFBot/issues/113). Xorg is tracked in
-[issue #79](https://github.com/jaylfronteras/JLFBot/issues/79), and guarded GNOME/Wayland support in
-[issue #109](https://github.com/jaylfronteras/JLFBot/issues/109).
+progress in [issue #29](https://github.com/jaylfronteras/ASLBot/issues/29) and the safety hold in
+[issue #345](https://github.com/jaylfronteras/ASLBot/issues/345). Bundled
+CUA supply-chain work is tracked in [issue #113](https://github.com/jaylfronteras/ASLBot/issues/113). Xorg is tracked in
+[issue #79](https://github.com/jaylfronteras/ASLBot/issues/79), and guarded GNOME/Wayland support in
+[issue #109](https://github.com/jaylfronteras/ASLBot/issues/109).
 
 ## Download packages
 
 Choose one Ubuntu 24.04 x86_64 package from the latest release:
 
-- [Debian package (`JLFBot-amd64.deb`)](https://github.com/jaylfronteras/JLFBot/releases/latest/download/JLFBot-amd64.deb) — recommended; APT installs its desktop dependencies and configures the bundled bot browser's sandbox.
-- [Portable AppImage (`JLFBot.AppImage`)](https://github.com/jaylfronteras/JLFBot/releases/latest/download/JLFBot.AppImage) — does not install system files.
-- [SHA-256 checksums](https://github.com/jaylfronteras/JLFBot/releases/latest/download/SHA256SUMS-ubuntu-x64.txt)
+- [Debian package (`ASLBot-amd64.deb`)](https://github.com/jaylfronteras/ASLBot/releases/latest/download/ASLBot-amd64.deb) — recommended; APT installs its desktop dependencies and configures the bundled bot browser's sandbox.
+- [Portable AppImage (`ASLBot.AppImage`)](https://github.com/jaylfronteras/ASLBot/releases/latest/download/ASLBot.AppImage) — does not install system files.
+- [SHA-256 checksums](https://github.com/jaylfronteras/ASLBot/releases/latest/download/SHA256SUMS-ubuntu-x64.txt)
 
 Versioned packages and previous releases remain available on the
-[releases page](https://github.com/jaylfronteras/JLFBot/releases).
+[releases page](https://github.com/jaylfronteras/ASLBot/releases).
 
 ## Build packages
 
@@ -48,8 +48,8 @@ Requirements for building from source:
 - pnpm 10.33.0 (Corepack can install the version declared by the project)
 
 ```sh
-git clone https://github.com/jaylfronteras/JLFBot.git
-cd JLFBot
+git clone https://github.com/jaylfronteras/ASLBot.git
+cd ASLBot
 corepack enable
 pnpm install --frozen-lockfile
 pnpm package:linux
@@ -57,8 +57,8 @@ pnpm package:linux
 
 The build creates:
 
-- `release/JLFBot-<version>-amd64.deb`
-- `release/JLFBot-<version>-x86_64.AppImage`
+- `release/ASLBot-<version>-amd64.deb`
+- `release/ASLBot-<version>-x86_64.AppImage`
 
 The AppImage uses a static runtime and does not require the legacy `libfuse2` package.
 
@@ -67,10 +67,10 @@ The AppImage uses a static runtime and does not require the legacy `libfuse2` pa
 Install a downloaded Debian package with APT so its desktop dependencies are resolved:
 
 ```sh
-sudo apt install ./JLFBot-amd64.deb
+sudo apt install ./ASLBot-amd64.deb
 ```
 
-Then open **JLFBot** from the GNOME application launcher. To remove it:
+Then open **ASLBot** from the GNOME application launcher. To remove it:
 
 ```sh
 sudo apt remove jlfbot
@@ -79,11 +79,11 @@ sudo apt remove jlfbot
 The portable AppImage does not install system files:
 
 ```sh
-chmod +x release/JLFBot-*-x86_64.AppImage
-./release/JLFBot-*-x86_64.AppImage
+chmod +x release/ASLBot-*-x86_64.AppImage
+./release/ASLBot-*-x86_64.AppImage
 ```
 
-For a downloaded release AppImage, use `JLFBot.AppImage` in place of the versioned path above.
+For a downloaded release AppImage, use `ASLBot.AppImage` in place of the versioned path above.
 
 ### Bundled bot browser on Ubuntu 24.04
 
@@ -98,7 +98,7 @@ user namespaces, its bundled browser can still report `No usable sandbox`. Insta
 do not add `--no-sandbox`, disable AppArmor globally, or allowlist arbitrary executables under your home
 directory. See [Chromium's explanation of the Ubuntu restriction](https://chromium.googlesource.com/chromium/src/+/main/docs/security/apparmor-userns-restrictions.md).
 
-Application data remains local in `~/.jlfbot`. Electron browser data and window state use the normal XDG
+Application data remains local in `~/.aslbot`. Electron browser data and window state use the normal XDG
 configuration directory (`~/.config/jlfbot` unless the environment overrides it).
 
 ## Develop the desktop shell
@@ -120,7 +120,7 @@ pnpm package:linux:dir
 
 ## Agent CLI discovery
 
-Applications launched from GNOME do not inherit the same interactive shell `PATH` as a terminal. JLFBot
+Applications launched from GNOME do not inherit the same interactive shell `PATH` as a terminal. ASLBot
 keeps the inherited path and adds existing common locations such as:
 
 - `~/.local/bin`
@@ -136,16 +136,16 @@ It also probes the login shell in the background. If a CLI still is not detected
 path before launching the app from a terminal and verify it there:
 
 ```sh
-JLFBOT_EXTRA_PATH=/your/custom/bin ./release/JLFBot-*-x86_64.AppImage
+JLFBOT_EXTRA_PATH=/your/custom/bin ./release/ASLBot-*-x86_64.AppImage
 ```
 
-Restart JLFBot after installing or signing in to a CLI.
+Restart ASLBot after installing or signing in to a CLI.
 
 ## Xorg and Wayland
 
 The shell, chat, cloud computers, connected apps, and preview-only capture work in both GNOME session types.
 The Wayland chooser/select/persistent-stream/cancel/end/retry lifecycle has been validated in a real Ubuntu
-24.04 GNOME Wayland session. JLFBot detects Wayland before XWayland when both `WAYLAND_DISPLAY` and
+24.04 GNOME Wayland session. ASLBot detects Wayland before XWayland when both `WAYLAND_DISPLAY` and
 `DISPLAY` exist, so capture cannot accidentally bypass portal-mediated behavior.
 
 Open the Computer panel and use the separate **Preview this computer** card. Capture never starts when the app
@@ -156,7 +156,7 @@ or panel opens.
   you press **Stop preview**, close the panel, end sharing from GNOME, or quit the app.
 
 Cancelling or ending Wayland sharing returns to a calm **Try again** state and never reopens the chooser
-automatically. JLFBot does not capture screen audio, remember the selected monitor after restart, or
+automatically. ASLBot does not capture screen audio, remember the selected monitor after restart, or
 offer an **Open Settings** action on Linux.
 
 Local computer control is independent from preview. It is available after explicit opt-in on Xorg and remains
@@ -167,7 +167,7 @@ fail-closed on Wayland. XWayland's `DISPLAY` never bypasses the Wayland safety g
 Installed `.deb` and AppImage builds include the certified **Cua Driver 0.19.3** CLI and cursor-theme sidecar.
 On GNOME Xorg, open Settings, choose **Enable local control (Beta)**, wait for **Ready**, then explicitly assign a bot
 to **This computer**. No driver download, terminal command, `chmod`, or daemon setup is required. The owned daemon
-starts with `--no-overlay`, so Cua's decorative full-screen X11 cursor surface is never created. JLFBot also
+starts with `--no-overlay`, so Cua's decorative full-screen X11 cursor surface is never created. ASLBot also
 uses Electron software rendering on Linux to avoid the reproduced NVIDIA/libGLES GPU-process failure that could
 leave an invisible focused app window receiving input.
 
@@ -204,7 +204,7 @@ package-owned path to `root:root 0755` automatically.
 The packaged runtime remains outside ASAR for deterministic provenance and validation. In packaged builds neither a
 `CUA_DRIVER_PATH` value nor an ambient PATH candidate can replace it; on Wayland neither can bypass the safety gate.
 
-The Xorg runtime uses private sockets, standard permission mode, per-action JLFBot approvals,
+The Xorg runtime uses private sockets, standard permission mode, per-action ASLBot approvals,
 telemetry/update-check suppression, strict driver identity, overlay-free startup, and lifecycle cleanup tests. Those
 defenses remain necessary, but none substitutes for the real-seat acceptance evidence required to enable Wayland. Linux
 **Auto** never routes to the user's desktop, and no Cloud or Local VM approval can authorize it.
@@ -225,7 +225,7 @@ pnpm smoke:linux-package
 The verifier checks `.deb` metadata, desktop identity, the exact dormant Cua resource tree and provenance,
 SquashFS/DEB directory modes, runtime path policy, and matching binary hashes across all artifacts. The local smoke
 launches the unpacked app and AppImage without `--no-sandbox`; CI first reproduces a `0.1.7` in-place DEB upgrade and
-then runs the same smoke against `/opt/JLFBot/jlfbot`. These lanes prove the embedded server and UI are
+then runs the same smoke against `/opt/ASLBot/jlfbot`. These lanes prove the embedded server and UI are
 usable while an optional Composio broker stalls, verify that an old local-control opt-in is cleared, and assert that
 no Cua executable starts on Xorg or simulated Wayland. Low-level runtime tests retain the future private-daemon
 contract without activating it in a packaged app. Only a real-seat acceptance matrix can authorize re-enablement.
@@ -234,7 +234,7 @@ contract without activating it in a packaged app. Only a real-seat acceptance ma
 
 ### An agent CLI is missing
 
-Run the CLI directly in a terminal, finish its sign-in flow, then restart JLFBot. If it lives outside the
+Run the CLI directly in a terminal, finish its sign-in flow, then restart ASLBot. If it lives outside the
 common directories above, use `JLFBOT_EXTRA_PATH` while testing and report the install location so it can be
 considered for automatic discovery.
 
@@ -260,8 +260,8 @@ open a new chooser. Cancelling or stopping sharing never causes an automatic sec
 Confirm the executable bit and architecture:
 
 ```sh
-chmod +x JLFBot-*-x86_64.AppImage
-file JLFBot-*-x86_64.AppImage
+chmod +x ASLBot-*-x86_64.AppImage
+file ASLBot-*-x86_64.AppImage
 ```
 
 Run it from a terminal once to collect the startup output. Do not install `libfuse2` just for this AppImage; the

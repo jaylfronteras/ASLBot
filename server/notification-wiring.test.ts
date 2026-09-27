@@ -55,9 +55,9 @@ posixOnly("routine failure notification wiring", () => {
   beforeAll(async () => {
     chmodSync(FAKE_CLI, 0o755);
     home = mkdtempSync(join(tmpdir(), "jlfbot-notifications-e2e-"));
-    mkdirSync(join(home, ".jlfbot"), { recursive: true });
+    mkdirSync(join(home, ".aslbot"), { recursive: true });
     writeFileSync(
-      join(home, ".jlfbot", "config.json"),
+      join(home, ".aslbot", "config.json"),
       JSON.stringify({
         instances: {
           grok: {

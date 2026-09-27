@@ -81,7 +81,7 @@ export function ConnectedWorkspacesSettings() {
         </ul>}
     </Card>
     {sharingOffered && computerWorkspace && <ComputerSharingSettings key={computerWorkspace.id} workspace={computerWorkspace} onClose={() => setComputerId(null)} />}
-    <Card title="Connect hosted workspace" subtitle="Already running JLFBot on a VPS, server, or another computer? Connect it here.">
+    <Card title="Connect hosted workspace" subtitle="Already running ASLBot on a VPS, server, or another computer? Connect it here.">
       <form className="flex flex-col gap-3" onSubmit={(event) => {
         event.preventDefault();
         if (address.trim()) void perform(() => bridge.addFromLink(address.trim(), name.trim()));

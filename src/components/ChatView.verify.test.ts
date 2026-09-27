@@ -40,6 +40,10 @@ vi.mock("./DesktopCapabilities", async (importOriginal) => ({
   useDesktopCapabilities: () => ({ capabilities: { dictation: { available: false } }, ready: true }),
 }));
 vi.mock("@/lib/analytics", () => ({ track: vi.fn() }));
+vi.mock("@/lib/simple-mode", async (importOriginal) => {
+  const original = await importOriginal<typeof import("@/lib/simple-mode")>();
+  return { ...original, useSimpleMode: () => false };
+});
 // The thread controls read live model lists; they are not what this file tests.
 vi.mock("./ModelPicker", () => ({ ModelPicker: () => createElement("span", { "data-test-model-control": true }) }));
 vi.mock("./ApprovalModeSelector", () => ({ ApprovalModeSelector: () => createElement("span", { "data-test-approval-control": true }) }));

@@ -1,6 +1,6 @@
 import { chmodSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { delimiter, join } from "node:path";
+import { delimiter, dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { enginesBinDir, enginesPrefix, installNpmEngine, npmPackageOf, serverInstallFor } from "./engine-install.ts";
 import { augmentedPath, findCliCandidates, registerPathDir, resetPathCacheForTests } from "./env-path.ts";
@@ -62,7 +62,9 @@ describe.skipIf(process.platform === "win32")("installing with npm", () => {
     writeFileSync(join(binDir, "npm"), FAKE_NPM, { mode: 0o755 });
     chmodSync(join(binDir, "npm"), 0o755);
     originalPath = process.env.PATH;
-    process.env.PATH = binDir;
+    // The fake npm is a shebang script. Keep node itself on PATH so
+    // `#!/usr/bin/env node` can start it; npm is still the fixture first.
+    process.env.PATH = `${binDir}${delimiter}${dirname(process.execPath)}`;
     process.env.FAKE_NPM_LOG = join(scratch, "calls.jsonl");
     delete process.env.FAKE_NPM_MODE;
     resetPathCacheForTests();

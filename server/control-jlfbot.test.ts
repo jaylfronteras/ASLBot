@@ -97,7 +97,7 @@ describe("control-jlfbot command mapping", () => {
 
   it("composes doctor from the shared health and model tools", async () => {
     const callTool = vi.fn(async (name: string) => name === "get_system_health"
-      ? { status: "connected", app: "jlfbot" }
+      ? { status: "connected", app: "aslbot" }
       : {
           instances: [
             { instanceId: "ready", snapshot: { state: "available" } },
@@ -115,7 +115,7 @@ describe("control-jlfbot command mapping", () => {
     });
   });
 
-  it("rejects an available engine when the endpoint is not JLFBot", async () => {
+  it("rejects an available engine when the endpoint is not ASLBot", async () => {
     const callTool = vi.fn(async (name: string) => name === "get_system_health"
       ? { status: "connected", app: "another-app" }
       : { instances: [{ instanceId: "ready", snapshot: { state: "available" } }] });
@@ -132,7 +132,7 @@ describe("control-jlfbot command mapping", () => {
       callTool: vi.fn() as any,
       env: {},
     })).rejects.toMatchObject({
-      message: "mutating commands require an explicit JLFBot instance",
+      message: "mutating commands require an explicit ASLBot instance",
     });
   });
 
@@ -186,7 +186,7 @@ describe("control-jlfbot command mapping", () => {
       callTool: vi.fn() as any,
       env: {},
     })).rejects.toMatchObject({
-      message: "mutating commands require an explicit JLFBot instance",
+      message: "mutating commands require an explicit ASLBot instance",
     });
   });
 
@@ -230,7 +230,7 @@ describe("control-jlfbot command mapping", () => {
     });
     await expect(runControlOmb(["set-model", "--bot", "bot-1", "--instance", "claude", "--model", "model-b"], {
       callTool: callTool as any, env: {},
-    })).rejects.toThrow("explicit JLFBot instance");
+    })).rejects.toThrow("explicit ASLBot instance");
   });
 });
 

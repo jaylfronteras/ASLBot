@@ -5,6 +5,7 @@
 // the selected model's catalog flag, which stays off until the owner lists
 // that id. Text-only ids such as deepseek-v4-pro are never inferred.
 import type { ModelCatalog, ProviderAdapter } from "./contracts.ts";
+import { legacyTestEngines } from "./product-mode.ts";
 
 export interface VisionInstance {
   driverKind: string;
@@ -32,11 +33,11 @@ export function nativeImageInputFor(instance: VisionInstance, modelId: string | 
 }
 
 export function computerMcpFor(instance: VisionInstance | null | undefined, modelId: string | undefined): boolean {
-  if (!instance) return false;
+  if (!legacyTestEngines() || !instance) return false;
   return instance.adapter.capabilities.computerMcp === true || openAICompatComputer(instance, modelId);
 }
 
 export function localComputerMcpFor(instance: VisionInstance | null | undefined, modelId: string | undefined): boolean {
-  if (!instance) return false;
+  if (!legacyTestEngines() || !instance) return false;
   return instance.adapter.capabilities.localComputerMcp === true || openAICompatComputer(instance, modelId);
 }

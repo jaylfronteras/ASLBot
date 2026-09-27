@@ -1,7 +1,7 @@
 # Provider images, authentication and thread approvals
 
 Every command below uses a disposable home. No real account, API key,
-provider charge, deployment, or running JLFBot workspace is involved.
+provider charge, deployment, or running ASLBot workspace is involved.
 
 ## Real CLI transport checks
 

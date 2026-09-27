@@ -124,9 +124,29 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Smoke the staged Windows CUA host (no computer actions)
+      - name: Windows installer does not stage Docker, Podman, or the CUA driver
         timeout-minutes: 5
-        run: pnpm build:cua:win && pnpm smoke:cua-win
+        shell: bash
+        run: |
+          node --input-type=module -e '
+            import { readFileSync } from "node:fs";
+            const yml = readFileSync("electron-builder.yml", "utf8");
+            const win = yml.split(/^win:/m)[1]?.split(/^nsis:/m)[0] ?? "";
+            if (/cua-driver|podman|docker/i.test(win)) {
+              console.error("Windows extraResources still mention a computer runtime");
+              process.exit(1);
+            }
+            const pkg = JSON.parse(readFileSync("package.json", "utf8"));
+            if (String(pkg.scripts["package:win"]).includes("cua")) {
+              console.error("package:win still builds the CUA driver");
+              process.exit(1);
+            }
+            if (!/ASLBot-\$\{version\}-setup/.test(yml)) {
+              console.error("Windows installer artifact is not named ASLBot");
+              process.exit(1);
+            }
+            console.log("Windows packaging has no Docker, Podman, or CUA driver");
+          '
 
   electron-smokes:
     needs: static
@@ -333,7 +353,7 @@ jobs:
           sudo chmod 4755 release/linux-unpacked/chrome-sandbox
           test "$(stat -c '%U:%G %a' release/linux-unpacked/chrome-sandbox)" = "root:root 4755"
       - name: Verify the installed browser with Ubuntu sandbox restrictions
-        run: node scripts/smoke-browser-bundle.mjs --resources /opt/JLFBot/resources
+        run: node scripts/smoke-browser-bundle.mjs --resources /opt/ASLBot/resources
       - name: Launch packaged app and verify lifecycle
         env:
           JLFBOT_KEEP_SMOKE_DIR: "1"

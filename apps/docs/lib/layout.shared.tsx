@@ -12,7 +12,7 @@ export function baseOptions(): BaseLayoutProps {
     links: [
       { text: 'Website', url: 'https://www.jlfbot.example.com', external: true },
       { text: 'Changelog', url: '/docs/changelog' },
-      { type: 'button', text: 'Download', url: 'https://github.com/jaylfronteras/JLFBot/releases/latest', external: true },
+      { type: 'button', text: 'Download', url: 'https://github.com/jaylfronteras/ASLBot/releases/latest', external: true },
     ],
     githubUrl: `https://github.com/${gitConfig.user}/${gitConfig.repo}`,
   };

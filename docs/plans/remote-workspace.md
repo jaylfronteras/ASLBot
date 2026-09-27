@@ -1,6 +1,6 @@
 # Plan: Remote Workspace
 
-Run the JLFBot server anywhere; connect from the desktop app, any
+Run the ASLBot server anywhere; connect from the desktop app, any
 browser, or the phone — with real authentication instead of the loopback
 trust model.
 

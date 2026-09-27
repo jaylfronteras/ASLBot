@@ -74,18 +74,6 @@ describe("Settings → Appearance", () => {
     expect(html).not.toContain("Maximum turn length");
   });
 
-  it.each([true, false])("only updates the local simple-mode preference when the switch is %s", (enabled) => {
-    fixture.simpleMode = enabled;
-    render();
-    const toggle = fixture.switches.find((props) => props["aria-label"] === "Simple mode")!;
-    expect(toggle.checked).toBe(enabled);
-    toggle.onClick!({} as never);
-    expect(fixture.setSimpleMode).toHaveBeenCalledWith(!enabled);
-    expect(fixture.api).not.toHaveBeenCalled();
-    expect(fixture.dispatch).not.toHaveBeenCalled();
-    expect(fixture.setShowThreads).not.toHaveBeenCalled();
-  });
-
   it("keeps the show-threads choice and disables that switch while simple mode is on", () => {
     fixture.simpleMode = true;
     fixture.showThreads = true;
@@ -96,7 +84,6 @@ describe("Settings → Appearance", () => {
     toggle.onClick!({} as never);
     expect(fixture.setShowThreads).not.toHaveBeenCalled();
     expect(html).toContain("Turn it off to use this switch again");
-    expect(html).toContain("One ongoing chat per bot");
   });
 
   it.each([true, false])("only updates the local preference when the switch is %s", (enabled) => {

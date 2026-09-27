@@ -1,27 +1,24 @@
 <div align="center">
 
-**JLFBot** — private, local-first AI agents for your own computer.
+**ASLBot** — a local multi-bot team app by Agile Solution Labs.
 
 </div>
 
 ---
 
-## Why
+## What it is
 
-JLFBot is a private, local-first personal AI agent workspace, a personal modified fork of an Apache-2.0 open-source project (see [NOTICE](NOTICE)) and inspired by **Grok Bot** —
-it keeps the idea (AI as a *messaging app*: a roster of bots you chat with, each with its own personality,
-memory of its thread, model, computer, and apps) and rebuilds it open, local-first, and on the agents you
-already have:
+ASLBot is a stripped personal build based on [JLFBot](https://github.com/jaylfronteras/JLFBot), which is a fork of OpenMausBot. See [NOTICE](NOTICE). Apache-2.0.
 
-- **Bring your own agents.** Bots run on the `claude`, `codex`, and `grok` CLIs installed on your own machine
-  — your existing logins and subscriptions, no new accounts, no proxy in the middle. Point any engine at a
-  custom CLI binary (a versioned build or wrapper) in **Settings → Engines**.
-- **Local first.** One small harness server on `127.0.0.1` owns every agent process. Transcripts, keys, and
-  events live in `~/.jlfbot`, not a cloud.
-- **Agents with hands.** Each bot can use a cloud Linux desktop, an isolated Local VM, or—where the platform
-  safety boundary is currently certified—your own computer, plus 500+ apps through Composio. Host control is
-  available on macOS and Ubuntu Xorg after explicit opt-in. Ubuntu Wayland host control remains disabled while
-  issue #345 is resolved.
+It is a chat app for a team of bots. The only model providers are OpenAI-compatible endpoints: paste a base URL and an API key. Presets cover DeepSeek, OpenRouter, Groq, OpenAI, Ollama, and LM Studio. Each bot picks a provider and model and can switch at any time.
+
+- **One sidebar.** Bots, rooms, and sections, each with an avatar, a name, and a one-line preview. Search and a single + button sit at the top. + creates a bot, creates a group chat, or jumps to a bot.
+- **One ongoing chat** per bot or room. Older threads stay in History.
+- **Bot settings and routines** open from the chat header.
+- **Team features stay:** rooms where bots talk to each other, sections, schedules, and bot-to-bot messages. Web search, files, MCP servers, and memory stay too.
+- **No CLI engines and no computer use.** Claude, Codex, Grok, and the other terminal agents are gone, and so are Docker, local VMs, and the computer panel. Data lives in `~/.aslbot` (never `~/.jlfbot`). The server listens on port `8899` and the dev UI on `5299`, so it can run next to JLFBot.
+
+The gallery below is inherited from JLFBot and describes that fuller app. It is not the ASLBot surface.
 
 ## Features
 
@@ -102,12 +99,12 @@ channel and its bots under a named context, then rename it or change its members
 
 ### 📦 Install a complete team from one Markdown file
 
-Browse outcome-driven teams on [BotMRR](https://botmrr.io), then choose **Add to JLFBot**. The app
+Browse outcome-driven teams on [BotMRR](https://botmrr.io), then choose **Add to ASLBot**. The app
 opens a review screen before creating the bots, Chief of Staff, channels, playbooks, connector checklist,
 and suggested routines. You can also import the same `.md` file from disk or paste its public GitHub URL
 in **Teams → Import**.
 
-The format stays portable: JLFBot reads the structured YAML frontmatter for a reliable one-click
+The format stays portable: ASLBot reads the structured YAML frontmatter for a reliable one-click
 install, while Grok, Claude, ChatGPT, and people can follow the ordinary Markdown playbook. Connections
 remain off until you approve them, routines arrive paused, and packages never carry credentials,
 conversations, permissions, memory, or computer access. Browse the
@@ -131,7 +128,7 @@ quality varies outside xAI’s [officially supported languages](https://docs.x.a
 This adds speech synthesis to the existing call flow; microphone transcription remains unchanged.
 
 **Also in the box:** streaming replies with tool-run activity chips · native macOS dictation from the
-composer mic (on-device Apple speech recognition — desktop app) · JLFBot cursor mascots with role-aware
+composer mic (on-device Apple speech recognition — desktop app) · ASLBot cursor mascots with role-aware
 expressions · screenshots of the bot's work folded into the transcript.
 
 ## Powered By
@@ -201,9 +198,9 @@ flowchart LR
 | App | `src/` | The chat shell. Server-backed store, one reducer, zero client-side transports. |
 | Desktop | `electron/` | macOS, Windows, and Ubuntu shells with an embedded harness and platform capabilities; Apple speech stays macOS-only, Ubuntu Xorg has opt-in local control, and Wayland remains fail-closed. |
 
-### Orchestrate JLFBot over MCP
+### Orchestrate ASLBot over MCP
 
-JLFBot ships a stdio MCP server for external clients such as Claude Desktop and Cursor. It exposes a
+ASLBot ships a stdio MCP server for external clients such as Claude Desktop and Cursor. It exposes a
 deliberately bounded team control plane: inspect bots and channels, read/search compact transcript pages,
 create and configure bots/channels/tasks, send work, wait for completion, switch models, and interrupt turns.
 It does **not** expose approval grants, deletion, arbitrary settings, credentials, or computer lifecycle.
@@ -212,11 +209,11 @@ See [MCP server setup and tool reference](docs/mcp-server.md).
 
 ## Quick start (personal use)
 
-JLFBot has no published release channel; build and run it from your own checkout.
+ASLBot has no published release channel; build and run it from your own checkout.
 
 ```sh
 # 1. Install (Node 24+, pnpm via corepack)
-git clone https://github.com/jaylfronteras/JLFBot && cd JLFBot
+git clone https://github.com/jaylfronteras/ASLBot && cd ASLBot
 corepack enable            # provides the pnpm version pinned in package.json
 pnpm install
 cp .env.example .env       # optional; every setting has a default
@@ -235,9 +232,9 @@ pnpm dev:desktop           # Electron window (keep the two above running)
 node dist-server/cli.js serve   # or: pnpm jlfbot serve
 ```
 
-Data lives in `~/.jlfbot` (override with `JLFBOT_DATA_DIR`). If an older `~/.openmausbot`
-folder exists and `~/.jlfbot` does not, JLFBot keeps using the old folder in place; to move it,
-quit JLFBot and rename the folder.
+Data lives in `~/.aslbot` (override with `JLFBOT_DATA_DIR`). If an older `~/.openmausbot`
+folder exists and `~/.aslbot` does not, ASLBot keeps using the old folder in place; to move it,
+quit ASLBot and rename the folder.
 
 Local installers: `pnpm package:linux`, `pnpm package:win` or `pnpm package:mac` (unsigned unless
 you add your own signing credentials). Hosted extras from upstream (managed Composio broker, phone
@@ -249,7 +246,7 @@ See the [Ubuntu Desktop guide](docs/linux-desktop.md) for Linux specifics.
 **From source:**
 
 ```sh
-git clone https://github.com/jaylfronteras/JLFBot && cd JLFBot
+git clone https://github.com/jaylfronteras/ASLBot && cd ASLBot
 pnpm install
 
 pnpm dev:server    # harness server → 127.0.0.1:8799
@@ -283,9 +280,9 @@ The Linux preview is user-initiated and never enables local bot control or Auto 
 Driver 0.19.3 runtime starts only after explicit opt-in and without its full-screen cursor overlay. On Wayland the
 app never starts it and clears legacy opt-ins while that real-seat safety gate remains unresolved. Chat, preview,
 Cloud, and Local VM remain available on both sessions. See the [Ubuntu Desktop guide](docs/linux-desktop.md) and tracking
-issues [#29](https://github.com/jaylfronteras/JLFBot/issues/29),
-[#345](https://github.com/jaylfronteras/JLFBot/issues/345), and
-[#113](https://github.com/jaylfronteras/JLFBot/issues/113).
+issues [#29](https://github.com/jaylfronteras/ASLBot/issues/29),
+[#345](https://github.com/jaylfronteras/ASLBot/issues/345), and
+[#113](https://github.com/jaylfronteras/ASLBot/issues/113).
 
 The Linux packager downloads only the tag-pinned upstream archive during the build, verifies its size, SHA-256,
 complete member allowlist, and inner executable hashes, then packages only the CLI and cursor-theme sidecar. The
@@ -298,7 +295,7 @@ in the sidebar footer) when you want to enable its integration:
 
 | Credential | What it enables | Where to get it |
 |---|---|---|
-| Composio project key (`ak_…`) | Connect Gmail, GitHub, Slack, Notion, and other apps to your bots | [JLFBot Composio setup](docs/composio.md) |
+| Composio project key (`ak_…`) | Connect Gmail, GitHub, Slack, Notion, and other apps to your bots | [ASLBot Composio setup](docs/composio.md) |
 | Box API key | Give bots an isolated remote Linux computer with a desktop and terminal | [Box API key guide](https://docs.ascii.dev/box/api-keys) |
 | ElevenLabs key | Read replies aloud, and call your bots | [ElevenLabs API keys](https://elevenlabs.io/app/settings/api-keys) |
 | Fish Audio key | Read replies aloud with Fish Audio voices, and call your bots | [Fish Audio API keys](https://fish.audio/app/api-keys/) |
@@ -325,12 +322,12 @@ The existing duration field remains calendar/display metadata. Webhook triggers 
 but reuse the same queued task executor and calendar
 receipts.
 
-JLFBot starts a webhook-only receiver on `127.0.0.1:8800` by default (or one port above `JLFBOT_PORT`).
+ASLBot starts a webhook-only receiver on `127.0.0.1:8800` by default (or one port above `JLFBOT_PORT`).
 Set `JLFBOT_WEBHOOK_PORT` to choose another port. A webhook secret is shown once when the trigger is created
 or rotated. Bearer authentication is recommended so the secret stays out of request URLs and most access
 logs; a single capability URL remains available for senders that cannot configure headers. The receiver
 exposes only `/health` and secret `/hooks/...` endpoints; it never exposes the app's broader API.
-JLFBot must remain running to accept a delivery. For public internet delivery, proxy only this
+ASLBot must remain running to accept a delivery. For public internet delivery, proxy only this
 dedicated receiver through a hosted relay or a tool such as Tailscale Funnel.
 
 ## Status
@@ -390,11 +387,11 @@ AI-provider sign-in. Devices pair once with a short code. The deployment guide i
 
 ## License
 
-JLFBot is a modified fork of an Apache License 2.0 project by Milind Soni and
+ASLBot is a modified fork of an Apache License 2.0 project by Milind Soni and
 contributors; see [NOTICE](NOTICE) for the attribution. The original license and
 notices are preserved in [LICENSE](LICENSE) and [NOTICE](NOTICE). The upstream
-source-available `enterprise/` directory is not part of JLFBot.
+source-available `enterprise/` directory is not part of ASLBot.
 
-JLFBot is an independent personal project inspired by Grok Bot and is not
+ASLBot is an independent personal project inspired by Grok Bot and is not
 affiliated with, endorsed by, or associated with xAI or the upstream project;
 "Grok" is a trademark of its respective owner.

@@ -2,17 +2,17 @@
   "name": "jlfbot",
   "private": true,
   "version": "0.1.86",
-  "description": "A private, local-first personal AI agent workspace.",
-  "homepage": "https://github.com/jaylfronteras/JLFBot",
+    "description": "A local multi-bot team app that talks to OpenAI-compatible providers.",
+  "homepage": "https://github.com/jaylfronteras/ASLBot",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jaylfronteras/JLFBot.git"
+    "url": "https://github.com/jaylfronteras/ASLBot.git"
   },
   "author": {
     "name": "Jejomar Fronteras"
   },
   "license": "Apache-2.0",
-  "desktopName": "com.jlfbot.app.desktop",
+    "desktopName": "com.agilesolutionlabs.aslbot.desktop",
   "type": "module",
   "main": "electron/main.mjs",
   "engines": {
@@ -31,6 +31,7 @@
     "docs:preview": "pnpm --filter @jlfbot/docs preview",
     "companion": "node --experimental-strip-types companion/src/index.ts",
     "jlfbot": "node --experimental-strip-types server/jlfbot.ts",
+    "aslbot": "node --experimental-strip-types server/jlfbot.ts",
     "pair": "node --experimental-strip-types server/jlfbot.ts pair",
     "dev:server": "node --experimental-strip-types server/index.ts",
     "mcp": "node --experimental-strip-types scripts/mcp-server.ts",
@@ -62,7 +63,7 @@
     "build:updater": "node scripts/bundle-updater.mjs",
     "package:prepare": "pnpm build && pnpm build:server && pnpm build:companion && pnpm build:updater && pnpm build:android-tools && pnpm build:cloudflared && pnpm build:browser",
     "package:mac": "pnpm package:prepare && pnpm build:speech && pnpm build:cua && electron-builder --mac --publish never",
-    "package:win": "pnpm package:prepare && pnpm build:cua:win && electron-builder --win --publish never",
+    "package:win": "pnpm package:prepare && electron-builder --win --publish never",
     "package:linux": "pnpm package:prepare && pnpm build:cua:linux && electron-builder --linux --x64 --publish never",
     "package:linux:offline": "pnpm package:prepare && pnpm build:cua:linux:offline && electron-builder --linux --x64 --publish never",
     "smoke:deb-command": "node scripts/smoke-deb-command.mjs",

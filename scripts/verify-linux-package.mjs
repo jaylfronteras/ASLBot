@@ -75,8 +75,8 @@ function requireUpdaterTarget(resources, label) {
   const updateFile = path.join(resources, "app-update.yml");
   requireFile(updateFile);
   const update = readFileSync(updateFile, "utf8");
-  if (!/^owner: jaylfronteras$/m.test(update) || !/^repo: JLFBot$/m.test(update)) {
-    fail(`${label} app-update.yml does not point at jaylfronteras/JLFBot`);
+  if (!/^owner: jaylfronteras$/m.test(update) || !/^repo: ASLBot$/m.test(update)) {
+    fail(`${label} app-update.yml does not point at jaylfronteras/ASLBot`);
   }
 }
 
@@ -435,7 +435,7 @@ for (const expected of [
 const extracted = mkdtempSync(path.join(tmpdir(), "jlfbot-deb-verify-"));
 try {
   execFileSync("dpkg-deb", ["--extract", deb, extracted]);
-  const debAppRoot = path.join(extracted, "opt", "JLFBot");
+  const debAppRoot = path.join(extracted, "opt", "ASLBot");
   requireDirectoryMode(debAppRoot, 0o755);
   const debResources = path.join(debAppRoot, "resources");
   // Routes the in-app updater to the package-manager hand-off.
@@ -455,7 +455,7 @@ try {
     "usr",
     "share",
     "applications",
-    "com.jlfbot.app.desktop",
+    "com.agilesolutionlabs.aslbot.desktop",
   );
   const scalableIcon = path.join(
     extracted,
@@ -471,10 +471,10 @@ try {
   requireFile(scalableIcon);
   const desktop = readFileSync(desktopFile, "utf8");
   for (const expected of [
-    "Name=JLFBot",
-    "Exec=/opt/JLFBot/jlfbot %U",
+    "Name=ASLBot",
+    "Exec=/opt/ASLBot/jlfbot %U",
     "Icon=jlfbot",
-    "StartupWMClass=com.jlfbot.app",
+    "StartupWMClass=com.agilesolutionlabs.aslbot",
     "Categories=Utility;",
   ]) {
     if (!desktop.includes(expected)) fail(`desktop entry is missing ${JSON.stringify(expected)}`);

@@ -55,7 +55,7 @@ export function agentUnit(spec: { node: string; script: string; operator: string
   return [
     "# Written by `jlfbot fleet init`. The operator workspace creates and manages workspaces through this.",
     "[Unit]",
-    "Description=JLFBot fleet agent",
+    "Description=ASLBot fleet agent",
     "After=network-online.target",
     "Wants=network-online.target",
     "",
@@ -121,7 +121,7 @@ export function workspaceHome(layout: FleetLayout, slug: string): string {
 }
 
 export function workspaceDataDir(layout: FleetLayout, slug: string): string {
-  return join(workspaceHome(layout, slug), ".jlfbot");
+  return join(workspaceHome(layout, slug), ".aslbot");
 }
 
 export function assertSlug(slug: string): void {
@@ -153,7 +153,7 @@ export function templateUnit(spec: { node: string; script: string; layout?: Flee
   return [
     "# Written by `jlfbot fleet init`. One unit for every workspace: %i is the slug.",
     "[Unit]",
-    "Description=JLFBot workspace %i",
+    "Description=ASLBot workspace %i",
     "After=network-online.target jlfbot-fence.service",
     "Wants=network-online.target",
     "Requires=jlfbot-fence.service",
@@ -188,7 +188,7 @@ export function fenceUnit(layout = fleetLayout()): string {
   return [
     "# Written by `jlfbot fleet init`: keeps each workspace's loopback ports to its own user.",
     "[Unit]",
-    "Description=JLFBot per-workspace loopback fence",
+    "Description=ASLBot per-workspace loopback fence",
     "",
     "[Service]",
     "Type=oneshot",

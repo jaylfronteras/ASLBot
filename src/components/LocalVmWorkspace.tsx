@@ -312,7 +312,7 @@ function LocalVmPane({
       if (bridge) await bridge.close(contextId).catch(() => {});
       if (!alive || !botId) return;
       if (!bridge) {
-        setError("The two-desktop workspace requires the JLFBot desktop app.");
+        setError("The two-desktop workspace requires the ASLBot desktop app.");
         return;
       }
       try {
@@ -363,7 +363,7 @@ function LocalVmPane({
         setError(
           cause instanceof Error && cause.message === "layout-unavailable"
             ? "The viewer area is not laid out yet. Retry after resizing the window."
-            : "JLFBot could not connect this Local VM viewer.",
+            : "ASLBot could not connect this Local VM viewer.",
         );
       }
     };
@@ -396,7 +396,7 @@ function LocalVmPane({
     if (!bridge || !bounds || !nativeState.open) return;
     void bridge
       .layout([{ contextId, bounds, visible: !obscured }])
-      .catch(() => setError("JLFBot could not position this Local VM viewer."));
+      .catch(() => setError("ASLBot could not position this Local VM viewer."));
   }, [contextId, nativeState.open, obscured]);
 
   useEffect(() => {
@@ -684,7 +684,7 @@ export function LocalVmWorkspace({
       setControlledBotId(null);
       return true;
     } catch {
-      setControlError("JLFBot could not hand control back. The workspace stayed open.");
+      setControlError("ASLBot could not hand control back. The workspace stayed open.");
       return false;
     } finally {
       controlBusyRef.current = false;

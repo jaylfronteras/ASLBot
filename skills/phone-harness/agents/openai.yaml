@@ -7,7 +7,7 @@ dependencies:
   tools:
     - type: "mcp"
       value: "phone"
-      description: "JLFBot's bundled physical Android phone tools"
+      description: "ASLBot's bundled physical Android phone tools"
 
 policy:
   allow_implicit_invocation: true

@@ -74,7 +74,7 @@ describe("task picker copy", () => {
 describe("filterTasks", () => {
   const tasks = [
     { title: "Clean up" },
-    { title: "JLFBot Update" },
+    { title: "ASLBot Update" },
     { title: "Investment report" },
     { title: "Report drafts" },
   ];
@@ -85,7 +85,7 @@ describe("filterTasks", () => {
   });
 
   it("matches titles case-insensitively", () => {
-    expect(filterTasks(tasks, "jlfbot").map((task) => task.title)).toEqual(["JLFBot Update"]);
+    expect(filterTasks(tasks, "aslbot").map((task) => task.title)).toEqual(["ASLBot Update"]);
   });
 
   it("ranks prefix hits ahead of substring hits, keeping input order in each tier", () => {

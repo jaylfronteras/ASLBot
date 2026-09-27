@@ -37,7 +37,7 @@ test("local entry opens Settings without enrollment or persistence", async () =>
 });
 
 test("consuming a launch action prevents it replaying on a later restart without changing other arguments", () => {
-  const original = ["/Applications/JLFBot", "--profile=fixture", "jlfbot://organization?ignored", "jlfbot://install/example"];
+  const original = ["/Applications/ASLBot", "--profile=fixture", "jlfbot://organization?ignored", "jlfbot://install/example"];
   const argv = [...original, "jlfbot://organization", "jlfbot://organization"];
   assert.equal(takeOrganizationDeepLink(argv), true);
   assert.deepEqual(argv, original);
@@ -48,7 +48,7 @@ test("consuming a launch action prevents it replaying on a later restart without
 test("the actual companion relaunch passes consumed arguments explicitly to Electron", () => {
   const main = readFileSync(new URL("./main.mjs", import.meta.url), "utf8");
   const source = main.slice(main.indexOf("function relaunchAfterDesktopRemoteChange()"), main.indexOf('ipcMain.handle("desktop-remote:state"'));
-  const argv = ["/fixture/JLFBot", "--fixture", "jlfbot://organization", "jlfbot://organization?ignored"];
+  const argv = ["/fixture/ASLBot", "--fixture", "jlfbot://organization", "jlfbot://organization?ignored"];
   takeOrganizationDeepLink(argv);
   const calls = [];
   runInNewContext(`${source}\nrelaunchAfterDesktopRemoteChange();`, {
@@ -65,7 +65,7 @@ test("the shipped updater adapter explicitly omits only the fixed action and its
   const bundle = readFileSync(new URL("./vendor/electron-updater.cjs", import.meta.url), "utf8").replace(/\r\n/g, "\n");
   assert.ok(bundle.includes(patched));
   const calls = [];
-  const argv = ["/fixture/JLFBot", "--fixture", "jlfbot://organization", "jlfbot://organization?ignored"];
+  const argv = ["/fixture/ASLBot", "--fixture", "jlfbot://organization", "jlfbot://organization?ignored"];
   runInNewContext(`({ app, ${patched} }).relaunch();`, {
     process: { argv }, app: { relaunch: options => calls.push(options.args) },
   });

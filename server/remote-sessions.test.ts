@@ -125,12 +125,12 @@ async function pairingCode(scopes?: string[]): Promise<{ code: string; credentia
 beforeAll(async () => {
   home = mkdtempSync(join(tmpdir(), "jlfbot-remote-test-"));
   const staticDir = join(home, "static");
-  mkdirSync(join(home, ".jlfbot"), { recursive: true });
+  mkdirSync(join(home, ".aslbot"), { recursive: true });
   mkdirSync(join(staticDir, "assets"), { recursive: true });
   writeFileSync(join(staticDir, "index.html"), "<!doctype html><title>Served UI</title>");
   // Avoid probing whatever agent CLIs happen to be installed on the test
   // machine; remote-session behavior does not depend on an engine.
-  writeFileSync(join(home, ".jlfbot", "config.json"), JSON.stringify({
+  writeFileSync(join(home, ".aslbot", "config.json"), JSON.stringify({
     instances: { fixture: { driver: "remote-session-test-shadow" } },
     profile: { name: "Security fixture", email: "private@example.invalid" },
     vps: { sshAlias: "fixture-private-host" },
@@ -182,7 +182,7 @@ describe("before pairing", () => {
     expect(response.body).toEqual({ error: "invalid request URL" });
     const health = await call("/api/health");
     expect(health.status).toBe(200);
-    expect(health.body).toMatchObject({ app: "jlfbot", pid: child.pid });
+    expect(health.body).toMatchObject({ app: "aslbot", pid: child.pid });
     expect(child.exitCode).toBeNull();
   });
 

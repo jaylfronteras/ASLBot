@@ -14,7 +14,7 @@ import type { SceneProps } from "./OrbitingApps";
 const CHANNELS_MS = 6000;
 
 const MEMBERS: Array<{ name: string; title: string; color: JlfColor }> = [
-  { name: "JLFBot", title: "Chief of staff", color: "green" },
+  { name: "ASLBot", title: "Chief of staff", color: "green" },
   { name: "Researcher", title: "Finds and checks facts", color: "blue" },
   { name: "Writer", title: "Drafts and edits", color: "orange" },
 ];

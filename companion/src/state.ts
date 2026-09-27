@@ -2,7 +2,7 @@
 //
 // Its own directory, not the harness's. The two processes have separate
 // lifecycles and separate concerns, and a sidecar that writes into
-// ~/.jlfbot would be reaching into somebody else's data layout — the
+// ~/.aslbot would be reaching into somebody else's data layout — the
 // exact coupling this design exists to avoid. If the harness reorganises its
 // files tomorrow, nothing here notices.
 import { randomUUID } from "node:crypto";

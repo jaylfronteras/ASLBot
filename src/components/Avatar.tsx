@@ -2,7 +2,7 @@
 // in the app's historical JlfAvatar API so no call site changes: per-bot
 // color becomes a body gradient, the app's one-shot motion beats borrow the
 // face/state for a moment, and the eyes follow the pointer. The previous
-// hand-built JLFBot body + face engine (jlf-engine/face/driver) is gone;
+// hand-built ASLBot body + face engine (jlf-engine/face/driver) is gone;
 // CursorAvatar owns morphing, blinking, drift, body motion and effects.
 import {
   forwardRef,

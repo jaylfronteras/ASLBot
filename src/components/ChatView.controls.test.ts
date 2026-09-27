@@ -25,6 +25,10 @@ vi.mock("./DesktopCapabilities", async (importOriginal) => ({
   useDesktopCapabilities: () => ({ capabilities: { dictation: { available: false }, host: { packaged: true } }, ready: true }),
 }));
 vi.mock("@/lib/analytics", () => ({ track: vi.fn() }));
+vi.mock("@/lib/simple-mode", async (importOriginal) => {
+  const original = await importOriginal<typeof import("@/lib/simple-mode")>();
+  return { ...original, useSimpleMode: () => false };
+});
 vi.mock("./ModelPicker", () => ({ ModelPicker: (props: ComponentProps<typeof ModelPicker>) => {
   fixture.model = props;
   return createElement("span", { "data-test-model-control": true });

@@ -1,3 +1,17 @@
+ASLBot
+Copyright 2026 Agile Solution Labs and Jejomar Fronteras
+
+ASLBot is a stripped-down product based on JLFBot by Jejomar Fronteras
+(https://github.com/jaylfronteras/JLFBot), which is a modified fork of
+OpenMausBot by milind-soni (Milind Soni and OpenMausBot contributors),
+https://github.com/milind-soni/OpenMausBot. Both are used under the Apache
+License, Version 2.0. ASLBot keeps the team chat, drops CLI engines and
+computer use, and talks only to OpenAI-compatible providers.
+
+The JLFBot notice follows.
+
+---
+
 JLFBot
 Copyright 2026 Jejomar Fronteras (modifications)
 

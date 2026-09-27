@@ -154,7 +154,7 @@ describe("an upstream that fails mid-stream", () => {
       const res = await fetch(`${base}/api/health`, { headers: { authorization: "Bearer jlf_x" } });
       expect(res.status).toBe(502);
       expect((await res.json()) as { error: string }).toEqual({
-        error: "JLFBot is not running on this computer",
+        error: "ASLBot is not running on this computer",
       });
     });
     expect(escaped).toEqual([]);

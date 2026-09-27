@@ -8,9 +8,13 @@ import { GroupTaskPicker, TaskPicker } from "./TaskPicker";
 import { workingFolderLabel } from "./ComposerTray";
 
 vi.mock("./DesktopCapabilities", () => ({ useDesktopCapabilities: () => ({}) }));
+vi.mock("@/lib/simple-mode", async (importOriginal) => {
+  const original = await importOriginal<typeof import("@/lib/simple-mode")>();
+  return { ...original, useSimpleMode: () => false };
+});
 
 const bot: Bot = {
-  id: "jlf", threadId: "idle", name: "JLFBot", title: "", description: "", notifications: true,
+  id: "jlf", threadId: "idle", name: "ASLBot", title: "", description: "", notifications: true,
   color: "green", unread: true, busy: true, activity: "working", messages: [],
   modelSelection: { instanceId: "fake", model: "test" },
   tasks: [
@@ -29,7 +33,7 @@ describe("sidebar bot threads", () => {
   });
   it("shows indented named threads with separate presence and a usable New thread action", () => {
     const markup = renderToStaticMarkup(createElement(StoreProvider, null, createElement(BotThreadList, { bot, selected: true })));
-    expect(markup).toContain('aria-label="JLFBot threads"');
+    expect(markup).toContain('aria-label="ASLBot threads"');
     expect(markup).toContain('data-sidebar-thread-row="idle" aria-current="page"');
     expect(markup).toContain(`Long research · ${formatUpdatedAt(2)} · Working`);
     expect(markup).toContain(`Needs approval · ${formatUpdatedAt(3)} · Waiting · Unread`);

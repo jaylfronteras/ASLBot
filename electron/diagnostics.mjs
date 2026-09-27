@@ -286,7 +286,7 @@ export function buildDiagnosticsReport({
   now = new Date().toISOString(),
 } = {}) {
   const lines = [];
-  lines.push("JLFBot diagnostics");
+  lines.push("ASLBot diagnostics");
   lines.push(`Generated: ${now}`);
   lines.push("");
   lines.push("## App");

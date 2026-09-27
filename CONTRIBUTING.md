@@ -1,6 +1,6 @@
 # Development notes
 
-JLFBot is maintained for personal use. The essentials:
+ASLBot is maintained for personal use. The essentials:
 
 ```sh
 corepack enable && pnpm install

@@ -1,12 +1,12 @@
-# Deploy JLFBot on a VPS
+# Deploy ASLBot on a VPS
 
-From a blank Linux server to JLFBot running on it around the clock, reachable from your laptop, the desktop app and your phone, with your bots working while every laptop is closed. It assumes nothing beyond being able to open a terminal and paste commands. About twenty minutes, most of it waiting.
+From a blank Linux server to ASLBot running on it around the clock, reachable from your laptop, the desktop app and your phone, with your bots working while every laptop is closed. It assumes nothing beyond being able to open a terminal and paste commands. About twenty minutes, most of it waiting.
 
 Three ways to make the server reachable are covered. Pick one; the rest of the guide is the same.
 
 | | You need | Who can reach it | Best for |
 |---|---|---|---|
-| **A. Public address, no domain** (`serve --tunnel`) | an JLFBot account (email code) | anyone with a pairing code, over HTTPS | the fastest path; a phone on cellular |
+| **A. Public address, no domain** (`serve --tunnel`) | an ASLBot account (email code) | anyone with a pairing code, over HTTPS | the fastest path; a phone on cellular |
 | **B. Your own domain** (Docker + Caddy) | a domain name, ports 80/443 | anyone with a pairing code, over HTTPS | a permanent address you own |
 | **C. Your Tailscale network** (`serve --tailscale`) | Tailscale on the server and your devices | only your tailnet | the most private; nothing public at all |
 
@@ -78,13 +78,13 @@ npx jlfbot login          # once: an emailed code signs this machine in and rese
 npx jlfbot serve --tunnel # runs the server there and prints the pairing link with a QR code
 ```
 
-`setup` connects an AI provider; it is separate from the JLFBot account.
+`setup` connects an AI provider; it is separate from the ASLBot account.
 Use Codex's device-code option over SSH, or enter a hidden API key for a
 chat-only connection. More engines can be added later. See [CLI setup](cli-onboarding.md).
 
-`login` asks for your email, sends an 8-digit code, and prints the address it reserved for this machine. `serve --tunnel` downloads `cloudflared` on the first run (a pinned version with a verified digest, into `~/.jlfbot`), starts the server, connects the tunnel, and after a few seconds prints `tunnel: live at https://…`. Leave it running; see "Keep it running" for a service.
+`login` asks for your email, sends an 8-digit code, and prints the address it reserved for this machine. `serve --tunnel` downloads `cloudflared` on the first run (a pinned version with a verified digest, into `~/.aslbot`), starts the server, connects the tunnel, and after a few seconds prints `tunnel: live at https://…`. Leave it running; see "Keep it running" for a service.
 
-The account credentials live in `~/.jlfbot/tunnel-account.json`, readable only by your user. `npx jlfbot logout` releases the address.
+The account credentials live in `~/.aslbot/tunnel-account.json`, readable only by your user. `npx jlfbot logout` releases the address.
 
 Skip to "Install and sign the engines in".
 
@@ -103,7 +103,7 @@ One container for the server plus Caddy for HTTPS at `https://jlf.example.com`.
 3. **Get the deploy files and set the name:**
 
    ```sh
-   git clone https://github.com/jaylfronteras/JLFBot && cd JLFBot/deploy
+   git clone https://github.com/jaylfronteras/ASLBot && cd ASLBot/deploy
    cp .env.example .env
    nano .env                # DOMAIN=jlf.example.com ; ENGINES=@anthropic-ai/claude-code @openai/codex
    ```
@@ -162,7 +162,7 @@ gets its own isolated session whose logins persist across restarts.
 
 ## Install and sign the engines in
 
-The npm JLFBot package does not install model engine CLIs. For paths A and C,
+The npm ASLBot package does not install model engine CLIs. For paths A and C,
 install the engine you use in the service account, then sign it in. For example,
 from the `jlf` shell, for Claude:
 
@@ -178,7 +178,7 @@ engines you use. For path B, run the installed CLI inside the container, for
 example `docker compose exec jlfbot claude`.
 
 Engine logins belong to the service user's home (for example `~/.codex` and
-`~/.claude`), separately from JLFBot's `~/.jlfbot`. Keep that home when
+`~/.claude`), separately from ASLBot's `~/.aslbot`. Keep that home when
 restarting or upgrading. The systemd example below includes `~/.local/bin` in PATH.
 
 ## Pair your first device
@@ -227,7 +227,7 @@ administrator shell, save this as `/etc/systemd/system/jlfbot.service`:
 ```ini
 # /etc/systemd/system/jlfbot.service
 [Unit]
-Description=JLFBot server
+Description=ASLBot server
 After=network-online.target
 
 [Service]
@@ -268,7 +268,7 @@ same release without an npm install prompt or an implicit upgrade.
   Check that installation succeeded before starting. A service restart by itself
   does not update the installed package. For foreground `npx` usage, specify the
   desired release as `npx --yes jlfbot@X.Y.Z serve --tunnel`.
-- **Path B:** `cd JLFBot/deploy && docker compose pull jlfbot && docker compose up -d`.
+- **Path B:** `cd ASLBot/deploy && docker compose pull jlfbot && docker compose up -d`.
 
 Routines and queued work survive a restart; a turn running at that moment does not, so update between runs.
 
@@ -285,7 +285,7 @@ credentials, and paired sessions). Run it from the service account's shell:
 ```sh
 umask 077
 backup_dir=$(mktemp -d "$PWD/jlfbot-backup.XXXXXX")
-tar czf "$backup_dir/jlfbot-data.tgz" -C "$HOME" .jlfbot
+tar czf "$backup_dir/jlfbot-data.tgz" -C "$HOME" .aslbot
 ```
 
 A full backup also needs your engine credential/configuration paths, such as
@@ -295,7 +295,7 @@ any configured home/data-directory overrides, and workspaces outside the app
 directory. These are not included in the command above.
 
 For path B, the whole `/data` volume includes the container's CLI homes. From
-`JLFBot/deploy`, stop the app before archiving; `deploy_data` is the default
+`ASLBot/deploy`, stop the app before archiving; `deploy_data` is the default
 volume name, so use your actual volume name if you changed the Compose project:
 
 ```sh

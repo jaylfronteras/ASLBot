@@ -446,7 +446,7 @@ describe("independent bot tasks through the isolated control surface", () => {
   it.skipIf(process.platform !== "darwin")("claims the shared computer only on first use and keeps a sibling stop from releasing it", async () => {
     // The fake provider only receives this inert descriptor; no UI driver is
     // launched and the descriptor lives inside the fixture's disposable home.
-    const descriptorDir = join(session.info.dataDir, "Library", "Application Support", "JLFBot");
+    const descriptorDir = join(session.info.dataDir, "Library", "Application Support", "ASLBot");
     mkdirSync(descriptorDir, { recursive: true });
     writeFileSync(join(descriptorDir, "cua-connection.json"), JSON.stringify({
       mcpCommand: join(session.info.dataDir, "never-launched-computer"), mcpArgs: [], mcpEnv: {},

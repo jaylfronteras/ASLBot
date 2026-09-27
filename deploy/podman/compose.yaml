@@ -19,7 +19,7 @@ services:
       - ${PODMAN_SOCKET:?Run setup.sh first}:/run/jlfbot-podman.sock
     environment:
       HOME: ${JLFBOT_DATA_ROOT}
-      JLFBOT_DATA_DIR: ${JLFBOT_DATA_ROOT}/.jlfbot
+      JLFBOT_DATA_DIR: ${JLFBOT_DATA_ROOT}/.aslbot
       JLFBOT_STATIC_DIR: /app/dist
       CONTAINER_HOST: unix:///run/jlfbot-podman.sock
       JLFBOT_PORT: ${JLFBOT_PORT:-8799}

@@ -98,7 +98,7 @@ describe("Settings full backups", () => {
     replace().props.onClick!(); await flush();
     expect(JSON.parse(fixture.api.mock.calls[3][1].body)).toEqual({ id: "stage-id", confirmation: "REPLACE" });
     expect(storage.get("jlfbot-pending-workspace-restore")).toBe("stage-id");
-    expect(render().html).toContain("Fully quit JLFBot");
+    expect(render().html).toContain("Fully quit ASLBot");
   });
 
   it("does not offer a replacement after failed password validation", async () => {
@@ -136,7 +136,7 @@ describe("Settings full backups", () => {
     fixture.api.mockResolvedValueOnce({ busy: true, pendingRestore: true });
     expect(render(true).html).not.toContain("Continue without restoring drafts");
     fixture.effects[0](); await flush();
-    expect(render(true).html).toContain("Fully quit JLFBot");
+    expect(render(true).html).toContain("Fully quit ASLBot");
     expect(render(true).html).not.toContain("Continue without restoring drafts");
     expect(fixture.api).toHaveBeenCalledOnce(); expect(storage.get("jlfbot-drafts")).toBe("old");
     fixture.values = [];

@@ -60,7 +60,7 @@ interface CodexAppServerModel {
 
 /** Ask the installed Codex CLI for the ChatGPT model catalog it can actually
  * use. This is the authoritative subscription catalog and changes more often
- * than JLFBot releases, so consume every page instead of hard-coding the
+ * than ASLBot releases, so consume every page instead of hard-coding the
  * current set forever. */
 export function readCodexAppServerModelCatalog(
   cli: string,

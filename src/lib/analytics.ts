@@ -1,13 +1,13 @@
-// Usage analytics are disabled in JLFBot.
+// Usage analytics are disabled in ASLBot.
 //
-// Upstream JLFBot shipped a PostHog client with a hard-coded project key
+// Upstream ASLBot shipped a PostHog client with a hard-coded project key
 // that reported usage events (and, optionally, the onboarding email) to the
-// upstream maintainers. JLFBot is a private, local-first fork, so nothing here
+// upstream maintainers. ASLBot is a private, local-first fork, so nothing here
 // talks to the network: every export keeps its call signature so callers do
 // not need to change, but track()/identifyEmail() are inert and the opt-in can
 // never be switched on.
 
-/** Always false: JLFBot never collects usage analytics. */
+/** Always false: ASLBot never collects usage analytics. */
 export function analyticsEnabled(): boolean {
   return false;
 }

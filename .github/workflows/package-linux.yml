@@ -4,7 +4,7 @@
 # partial release. That keeps release credentials and publication authority
 # in the unified release workflow while making every release candidate
 # reproducible from an exact ref. Attach the resulting files to the matching
-# canonical JLFBot release after the smoke test passes.
+# canonical ASLBot release after the smoke test passes.
 name: Package Ubuntu
 
 on:
@@ -83,7 +83,7 @@ jobs:
           sudo chmod 4755 release/linux-unpacked/chrome-sandbox
           test "$(stat -c '%U:%G %a' release/linux-unpacked/chrome-sandbox)" = "root:root 4755"
       - name: Verify the installed browser with Ubuntu sandbox restrictions
-        run: node scripts/smoke-browser-bundle.mjs --resources /opt/JLFBot/resources
+        run: node scripts/smoke-browser-bundle.mjs --resources /opt/ASLBot/resources
       - name: Launch packaged app and verify lifecycle
         env:
           JLFBOT_KEEP_SMOKE_DIR: "1"
@@ -98,20 +98,20 @@ jobs:
         run: |
           set -euo pipefail
           version="$(node -p "require('./package.json').version")"
-          appimage="release/JLFBot-${version}-x86_64.AppImage"
-          deb="release/JLFBot-${version}-amd64.deb"
+          appimage="release/ASLBot-${version}-x86_64.AppImage"
+          deb="release/ASLBot-${version}-amd64.deb"
           test -f "$appimage"
           test -f "$deb"
-          cp "$appimage" release/JLFBot.AppImage
-          cp "$deb" release/JLFBot-amd64.deb
-          chmod 0755 release/JLFBot.AppImage
+          cp "$appimage" release/ASLBot.AppImage
+          cp "$deb" release/ASLBot-amd64.deb
+          chmod 0755 release/ASLBot.AppImage
           (
             cd release
             sha256sum \
               "$(basename "$appimage")" \
               "$(basename "$deb")" \
-              JLFBot.AppImage \
-              JLFBot-amd64.deb > SHA256SUMS-ubuntu-x64.txt
+              ASLBot.AppImage \
+              ASLBot-amd64.deb > SHA256SUMS-ubuntu-x64.txt
           )
           echo "artifact-name=jlfbot-ubuntu-${version}-x64" >> "$GITHUB_OUTPUT"
           echo "version: $version"
@@ -132,10 +132,10 @@ jobs:
         with:
           name: ${{ steps.release.outputs.artifact-name }}
           path: |
-            release/JLFBot-*-amd64.deb
-            release/JLFBot-*-x86_64.AppImage
-            release/JLFBot-amd64.deb
-            release/JLFBot.AppImage
+            release/ASLBot-*-amd64.deb
+            release/ASLBot-*-x86_64.AppImage
+            release/ASLBot-amd64.deb
+            release/ASLBot.AppImage
             release/SHA256SUMS-ubuntu-x64.txt
           if-no-files-found: error
           retention-days: 14

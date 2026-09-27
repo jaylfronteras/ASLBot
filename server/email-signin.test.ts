@@ -92,10 +92,10 @@ beforeAll(async () => {
   stub = await startControlPlaneStub();
   home = mkdtempSync(join(tmpdir(), "jlfbot-email-signin-"));
   const staticDir = join(home, "static");
-  mkdirSync(join(home, ".jlfbot"), { recursive: true });
+  mkdirSync(join(home, ".aslbot"), { recursive: true });
   mkdirSync(join(staticDir, "assets"), { recursive: true });
   writeFileSync(join(staticDir, "index.html"), "<!doctype html><title>Served UI</title>");
-  writeFileSync(join(home, ".jlfbot", "config.json"), JSON.stringify({
+  writeFileSync(join(home, ".aslbot", "config.json"), JSON.stringify({
     instances: { fixture: { driver: "email-signin-test-shadow" } },
     signIn: { admins: ["her@example.test", "@agentada.test"], members: ["staff@example.test"] },
   }));
@@ -264,7 +264,7 @@ describe("sign in with your email on a hosted server", () => {
   it("ends an idle email stream after an external allow-list removal and never revives the old cookie", async () => {
     const cookie = await signIn("staff@example.test");
     const stream = await openEvents(cookie);
-    const configPath = join(home, ".jlfbot", "config.json");
+    const configPath = join(home, ".aslbot", "config.json");
     const config = JSON.parse(readFileSync(configPath, "utf8"));
     try {
       // The fleet agent and CLI update this file outside the running server.

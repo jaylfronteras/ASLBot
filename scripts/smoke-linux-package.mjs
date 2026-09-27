@@ -37,15 +37,15 @@ const xdgRuntime = path.join(sandbox, "runtime");
 const marker = path.join(sandbox, "cua-invocations.ndjson");
 const fakeState = path.join(sandbox, "cua-serve-count");
 const sentinel = path.join(sandbox, "cua-driver");
-mkdirSync(path.join(home, ".jlfbot"), { recursive: true });
+mkdirSync(path.join(home, ".aslbot"), { recursive: true });
 mkdirSync(xdgConfig, { recursive: true });
 mkdirSync(xdgRuntime, { recursive: true, mode: 0o700 });
 chmodSync(xdgRuntime, 0o700);
 writeFileSync(
-  path.join(home, ".jlfbot", "config.json"),
+  path.join(home, ".aslbot", "config.json"),
   JSON.stringify({ instances: { ghost: { driver: "not-a-real-driver", displayName: "Ghost" } } }),
 );
-for (const appName of ["jlfbot", "JLFBot"]) {
+for (const appName of ["jlfbot", "ASLBot"]) {
   const userData = path.join(xdgConfig, appName);
   mkdirSync(userData, { recursive: true, mode: 0o700 });
   chmodSync(userData, 0o700);
@@ -282,10 +282,10 @@ try {
     location,
     title,
   } = result;
-  if (health?.app !== "jlfbot" || health.static !== true) {
+  if (health?.app !== "aslbot" || health.static !== true) {
     throw new Error(`unexpected embedded health response: ${JSON.stringify(health)}`);
   }
-  if (!String(title).includes("JLFBot")) throw new Error(`unexpected renderer title: ${title}`);
+  if (!String(title).includes("ASLBot")) throw new Error(`unexpected renderer title: ${title}`);
   if (capabilities.host.platform !== "linux") throw new Error("renderer did not report Linux");
   if (capabilities.host.session !== (wayland ? "wayland" : "x11")) {
     throw new Error(`renderer did not report the ${wayland ? "Wayland" : "X11"} contract`);
@@ -335,7 +335,7 @@ try {
   if (sessionBlocked) {
     await waitForExit();
     if (existsSync(marker)) throw new Error("release safety block still invoked a CUA executable");
-    const activeUserData = ["jlfbot", "JLFBot"]
+    const activeUserData = ["jlfbot", "ASLBot"]
       .map((name) => path.join(xdgConfig, name))
       .find((directory) => existsSync(path.join(directory, "cua-connection.json")));
     if (!activeUserData) throw new Error("release safety smoke could not locate the CUA descriptor");
@@ -382,7 +382,7 @@ try {
     if (existsSync(marker)) {
       throw new Error(`packaged app invoked the ambient driver:\n${readFileSync(marker, "utf8")}`);
     }
-    const userData = ["jlfbot", "JLFBot"]
+    const userData = ["jlfbot", "ASLBot"]
       .map((name) => path.join(xdgConfig, name))
       .find((directory) => existsSync(path.join(directory, "cua-connection.json")));
     if (!userData) throw new Error("bundled smoke could not locate the CUA descriptor");
@@ -478,7 +478,7 @@ try {
       await delay(50);
     }
     if (staleHealth?.ok) throw new Error("embedded harness survived hard Electron death");
-    const userData = ["jlfbot", "JLFBot"]
+    const userData = ["jlfbot", "ASLBot"]
       .map((name) => path.join(xdgConfig, name))
       .find((directory) => existsSync(path.join(directory, "cua-connection.json")));
     if (!userData) throw new Error("hard-death smoke could not locate the CUA descriptor");

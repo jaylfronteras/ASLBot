@@ -52,7 +52,7 @@ export const HELP_UI = `renderer (needs a ui launch handle; every verb takes --u
   ui wait-settle --ui HANDLE [--timeout 30]
   ui help`;
 
-export const HELP = `control-jlfbot — verify a running JLFBot instance through its shared MCP core
+export const HELP = `control-jlfbot — verify a running ASLBot instance through its shared MCP core
 
 read-only:
   doctor [--url URL]
@@ -127,7 +127,7 @@ function configuredUrl(raw: unknown, env: NodeJS.ProcessEnv, requiredForMutation
   if (!explicit) {
     if (requiredForMutation) {
       throw new ControlOmbError(
-        "mutating commands require an explicit JLFBot instance",
+        "mutating commands require an explicit ASLBot instance",
         "start `control-jlfbot launch`, then pass its URL with --url",
       );
     }
@@ -182,7 +182,7 @@ export async function runControlOmb(
     const health = rawHealth as { status: string; endpoint?: string; app: string; packaged: boolean };
     const instances = (models as { instances?: Array<{ instanceId?: string; snapshot?: { state?: string } }> }).instances ?? [];
     return {
-      ok: health.app === "jlfbot"
+      ok: health.app === "aslbot"
         && instances.some((instance) => instance.snapshot?.state === "available"),
       health: endpoint ? { ...health, endpoint } : health,
       availableEngines: instances
@@ -363,6 +363,9 @@ export function verificationServerEnvironment(parentEnv: NodeJS.ProcessEnv, data
     // fixture through spawnCli without a shell.
     PATH: dirname(process.execPath),
   });
+  // Vitest sets this so the inherited suite still loads CLI engines. A
+  // product launch leaves it unset, and the child stays OpenAI-compatible only.
+  if (parentEnv.ASLBOT_TEST_ENGINES === "1") childEnv.ASLBOT_TEST_ENGINES = "1";
   // The fake engine's own knobs (mode, replies, tool calls) are the one thing
   // a caller may script into the child: FAKE_CLAUDE_* crosses, nothing else.
   for (const [key, value] of Object.entries(parentEnv)) {
@@ -466,7 +469,7 @@ export async function launchVerificationServer(
           signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
         });
         const body = response.ok ? await response.json() as { app?: string } : null;
-        if (body?.app === "jlfbot") break;
+        if (body?.app === "aslbot") break;
       } catch {
         // The server is still starting.
       }

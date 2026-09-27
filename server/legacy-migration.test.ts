@@ -1,7 +1,5 @@
-// A user upgrading from the pre-rename data dir (~/.opengrokbot) must find
-// everything in ~/.jlfbot after the first boot. Anything that touches
-// the new dir before ensureDirs() runs would make that rename a no-op and
-// boot the user into an empty workspace — this test pins the order.
+// ASLBot must not rename or read another product's data directory. A home
+// that already has ~/.opengrokbot still boots a fresh ~/.aslbot.
 import { spawn, type ChildProcess } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -41,6 +39,8 @@ beforeAll(async () => {
       JLFBOT_PORT: String(PORT),
       JLFBOT_WEBHOOK_PORT: String(WEBHOOK_PORT),
       JLFBOT_BROWSER_CONNECTION: join(home, "browser-test-connection.json"),
+      // Product boot: do not load the inherited CLI fleet.
+      ASLBOT_TEST_ENGINES: "0",
     },
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -64,10 +64,11 @@ afterAll(async () => {
 });
 
 describe("legacy data dir", () => {
-  it("is renamed to the new name on first boot, with its contents and a fresh environment id", () => {
-    const fresh = join(home, ".jlfbot");
-    expect(existsSync(join(home, ".opengrokbot"))).toBe(false);
-    expect(readFileSync(join(fresh, "keep-me.txt"), "utf8")).toBe("carried over");
+  it("leaves other products' folders alone and starts in ~/.aslbot", () => {
+    const fresh = join(home, ".aslbot");
+    expect(existsSync(join(home, ".opengrokbot"))).toBe(true);
+    expect(readFileSync(join(home, ".opengrokbot", "keep-me.txt"), "utf8")).toBe("carried over");
+    expect(existsSync(join(fresh, "keep-me.txt"))).toBe(false);
     expect(readFileSync(join(fresh, "environment-id"), "utf8").trim()).toMatch(/^[0-9a-f-]{36}$/);
   });
 });

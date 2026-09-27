@@ -13,7 +13,16 @@ import { acquireDataDirLease } from "./data-dir-lease.ts";
 import { augmentedPath, resetPathCache } from "./env-path.ts";
 import { resolveCli } from "./procs.ts";
 import { ProviderRegistry } from "./harness/registry.ts";
-import { BUILT_IN_DRIVERS } from "./drivers/builtIn.ts";
+import { PRODUCT_DRIVERS } from "./drivers/builtIn.ts";
+import { legacyTestEngines } from "./product-mode.ts";
+import { PROVIDER_PRESETS } from "./providers.ts";
+import type { AnyProviderDriver } from "./contracts.ts";
+
+async function setupDrivers(): Promise<readonly AnyProviderDriver[]> {
+  if (process.env.ASLBOT_TEST_ENGINES !== "1") return PRODUCT_DRIVERS;
+  const legacy = await import("./drivers/" + "legacy-builtIn.ts");
+  return [...legacy.LEGACY_DRIVERS, ...PRODUCT_DRIVERS];
+}
 import { defaultSetupIo, SetupCancelled, type SetupIo } from "./cli-prompts.ts";
 import { API_ENDPOINTS, fetchSetupModels, normalizeApiUrl, verifySetupCompletion } from "./cli-api-setup.ts";
 
@@ -26,7 +35,7 @@ interface SetupDependencies {
 }
 
 async function inspect(id: string, entry: InstanceConfig): Promise<Inspection> {
-  const registry = new ProviderRegistry(BUILT_IN_DRIVERS);
+  const registry = new ProviderRegistry(await setupDrivers());
   try {
     await registry.load({ [id]: entry });
     const provider = registry.get(id);
@@ -163,11 +172,62 @@ async function connectNative(
   return state.models;
 }
 
+async function runAslbotSetup(
+  options: { dataDir: string; port: number },
+  io: SetupIo,
+  deps: SetupDependencies,
+): Promise<boolean> {
+  assertDataDir(options.dataDir);
+  const lease = acquireDataDirLease(options.dataDir);
+  try {
+    checkStoredConfig(options.dataDir);
+    const cfg = loadConfig();
+    io.log("\nWelcome to ASLBot\n");
+    io.log("Add an OpenAI-compatible provider. Ctrl-C cancels.");
+    const labels = [...PROVIDER_PRESETS.map((preset) => preset.name), "Other OpenAI-compatible endpoint"];
+    const pick = await io.choose("Which provider?", labels, 0);
+    const preset = PROVIDER_PRESETS[pick];
+    const url = preset ? preset.url : normalizeApiUrl((await io.ask("API base URL (including /v1): ")).trim());
+    const name = preset?.name ?? new URL(url).hostname;
+    const local = ["localhost", "127.0.0.1", "[::1]"].includes(new URL(url).hostname);
+    const typed = (await io.secret(local ? "API key (hidden, blank is fine for a local server): " : "API key (hidden): ")).trim();
+    const key = typed || (local ? "local" : "");
+    if (!key) throw new Error("An API key is required. Nothing was saved.");
+    io.log("Checking the model catalog…");
+    let models: ModelCatalog["options"];
+    try { models = await deps.models(url, key); }
+    catch (error) {
+      if (error instanceof SetupCancelled) throw error;
+      io.log(error instanceof Error ? error.message : "Could not load this model catalog.");
+      if (!await io.confirm("Enter an exact chat model ID and check it directly instead?", false)) throw error;
+      const manual = (await io.ask("Chat model ID: ")).trim();
+      if (!manual) throw new Error("A model ID is required. Nothing was saved.");
+      models = [{ id: manual, label: manual }];
+    }
+    const model = await chooseModel(io, { default: "", options: models });
+    if (!await io.confirm("Send one short test message? Your API provider may charge for this request.", true)) throw new SetupCancelled();
+    await deps.verify(url, key, model);
+    const id = `p-${randomUUID().slice(0, 8)}`;
+    const entry: InstanceConfig = { driver: "openai-compat", displayName: name, enabled: true, config: { url, key, model } };
+    const instances = cfg.instances ? { ...cfg.instances, [id]: entry } : { [id]: entry };
+    saveConfig({ instances, defaultModelSelection: { instanceId: id, model } });
+    io.log("\nSetup saved.");
+    return true;
+  } catch (error) {
+    if (!(error instanceof SetupCancelled)) throw error;
+    io.log("\nSetup cancelled. No settings were changed.");
+    return false;
+  } finally {
+    lease.release();
+  }
+}
+
 export async function runSetup(
   options: { dataDir: string; port: number },
   io: SetupIo = defaultSetupIo(),
   deps: SetupDependencies = dependencies,
 ): Promise<boolean> {
+  if (!legacyTestEngines()) return runAslbotSetup(options, io, deps);
   assertDataDir(options.dataDir);
   const lease = acquireDataDirLease(options.dataDir);
   try {
@@ -176,7 +236,7 @@ export async function runSetup(
     const runtime = instanceConfigs(cfg);
     const existing = Object.entries(runtime).filter(([id, entry]) =>
       !!cfg.instances?.[id] && ["codex", "claudeAgent", "openai-compat"].includes(entry.driver) && entry.enabled !== false);
-    io.log("\nWelcome to JLFBot\n");
+    io.log("\nWelcome to ASLBot\n");
     io.log("Let's connect your AI. Choose a provider, then a model.");
     io.log("Existing bots and conversations stay untouched. Ctrl-C cancels.");
     io.log("You can add integrations and change settings later.\n");
@@ -219,7 +279,7 @@ export async function runSetup(
           let routingProvider: string | undefined;
           if (prior) {
             const config = rawObject(prior[1].config);
-            const decoded = BUILT_IN_DRIVERS.find((d) => d.driverKind === "openai-compat")!.decodeConfig(config);
+            const decoded = PRODUCT_DRIVERS.find((d) => d.driverKind === "openai-compat")!.decodeConfig(config);
             url = normalizeApiUrl(decoded.url);
             key = decoded.key ?? prior[1].environment?.[decoded.apiKeyEnv]
               ?? prior[1].environment?.OPENAI_COMPAT_API_KEY

@@ -93,7 +93,7 @@ describe("jlfbot command line", () => {
       const out = block({ phone: "android" });
       expect(out).toContain(qrToString(invite));
       expect(out).not.toContain(qrToString(url));
-      expect(out).toContain("Scan that in the JLFBot app");
+      expect(out).toContain("Scan that in the ASLBot app");
       // The web link is still offered, but not as the thing to scan.
       expect(out).toContain(`web browser:   ${url}`);
       expect(out).not.toContain("open or scan:");
@@ -115,7 +115,7 @@ describe("jlfbot command line", () => {
       expect(out).toContain("The Android app needs the phone-app link");
       expect(out).toContain("JLFBOT_PUBLIC_URL");
       // It must not claim the QR is scannable in the app when it is not.
-      expect(out).not.toContain("Scan that in the JLFBot app");
+      expect(out).not.toContain("Scan that in the ASLBot app");
     });
   });
 
@@ -153,7 +153,7 @@ describe("jlfbot command line", () => {
     try {
       const deadline = Date.now() + 60_000;
       while (!out.includes("open or scan:") && Date.now() < deadline && child.exitCode === null) await new Promise((r) => setTimeout(r, 200));
-      expect(out).toContain(`JLFBot is running on http://127.0.0.1:${port}, reachable at https://mini.example`);
+      expect(out).toContain(`ASLBot is running on http://127.0.0.1:${port}, reachable at https://mini.example`);
       expect(out).toMatch(/pairing code:  [A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}/);
       expect(out).toContain("open or scan:  https://mini.example/pair#code=");
       expect(out).toMatch(/[▀▄█]/);
@@ -449,7 +449,7 @@ describe.skipIf(process.platform === "win32")("serve --tunnel", () => {
     const gateway = `http://127.0.0.1:${originPort}`;
     try {
       const deadline = Date.now() + 60_000;
-      while (!out.includes("JLFBot is running") && Date.now() < deadline && child.exitCode === null) await new Promise((r) => setTimeout(r, 200));
+      while (!out.includes("ASLBot is running") && Date.now() < deadline && child.exitCode === null) await new Promise((r) => setTimeout(r, 200));
       expect(out).toContain("using the installation credential from JLFBOT_INSTALLATION_CREDENTIAL");
       expect(out).toContain(`reachable at ${stub.endpointUrl}`);
       expect(existsSync(join(dataDir, "tunnel-account.json"))).toBe(false);
@@ -502,7 +502,7 @@ describe.skipIf(process.platform === "win32")("serve --tunnel", () => {
     try {
       const deadline = Date.now() + 60_000;
       while (!out.includes("open or scan:") && Date.now() < deadline && child.exitCode === null) await new Promise((r) => setTimeout(r, 200));
-      expect(out).toContain(`JLFBot is running on http://127.0.0.1:${port}, reachable at ${stub.endpointUrl}`);
+      expect(out).toContain(`ASLBot is running on http://127.0.0.1:${port}, reachable at ${stub.endpointUrl}`);
       expect(out).toContain(`open or scan:  ${stub.endpointUrl}/pair#code=`);
       // a fresh connector token was fetched for this run
       expect(stub.calls).toContain("POST /v1/installations/self/endpoint");
@@ -524,7 +524,7 @@ describe.skipIf(process.platform === "win32")("serve --tunnel", () => {
       const stranger = await fetch(`${gateway}/api/bots`);
       expect(stranger.status).toBe(403);
       expect(((await stranger.json()) as { error: string }).error).toMatch(/through a proxy/);
-      expect(await (await fetch(`${gateway}/api/health`)).json()).toEqual({ app: "jlfbot" });
+      expect(await (await fetch(`${gateway}/api/health`)).json()).toEqual({ app: "aslbot" });
       expect(typeof ((await (await fetch(`http://127.0.0.1:${port}/api/health`)).json()) as { pid: unknown }).pid).toBe("number");
       // the printed code pairs a device through the gateway, and its session is honoured there
       const match = /pairing code:  ([A-Z2-9-]+)/.exec(out);
@@ -615,7 +615,7 @@ describe.skipIf(process.platform === "win32")("serve --domain", () => {
     try {
       const deadline = Date.now() + 60_000;
       while (!out.includes("open or scan:") && Date.now() < deadline && child.exitCode === null) await new Promise((r) => setTimeout(r, 200));
-      expect(out).toContain(`JLFBot is running on http://127.0.0.1:${port}, reachable at https://jlfbot.example.test`);
+      expect(out).toContain(`ASLBot is running on http://127.0.0.1:${port}, reachable at https://jlfbot.example.test`);
       expect(out).toContain("https: Caddy serves https://jlfbot.example.test");
       expect(out).toContain("open or scan:  https://jlfbot.example.test/pair#code=");
       const args = readFileSync(join(home, "caddy-args.txt"), "utf8").trim();

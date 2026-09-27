@@ -24,7 +24,7 @@ export interface ShortcutGroup {
 }
 
 /**
- * Complete catalog of keyboard shortcuts available in JLFBot,
+ * Complete catalog of keyboard shortcuts available in ASLBot,
  * organized logically into categories for quick reference.
  */
 export const SHORTCUT_GROUPS: readonly ShortcutGroup[] = [

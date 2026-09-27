@@ -75,7 +75,7 @@ describe("bundled verification skill", () => {
     expect(ids).toContain("create-verification-skill");
     expect(ids).not.toContain("maintain-verification-skill");
     expect(instructions).toContain("skill_manage");
-    expect(instructions).not.toContain("~/.jlfbot");
+    expect(instructions).not.toContain("~/.aslbot");
     expect(instructions).not.toContain("propose_routine");
   });
 

@@ -19,7 +19,7 @@ import "./styles.css";
 
 const PREVIEW_BOT = {
   id: "preview-bot",
-  name: "JLFBot",
+  name: "ASLBot",
   color: "green",
   soul: "",
 } as unknown as Bot;

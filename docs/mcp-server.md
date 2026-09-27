@@ -1,7 +1,7 @@
-# JLFBot MCP server
+# ASLBot MCP server
 
-The JLFBot desktop app includes a local stdio MCP server. It lets another MCP client coordinate your
-JLFBot team while the desktop app and its harness are running.
+The ASLBot desktop app includes a local stdio MCP server. It lets another MCP client coordinate your
+ASLBot team while the desktop app and its harness are running.
 
 ## What it can do
 
@@ -16,14 +16,14 @@ change credentials, or control computer/VM lifecycle. Those actions stay in the 
 
 ## From a source checkout
 
-Start JLFBot, then configure the MCP client to run:
+Start ASLBot, then configure the MCP client to run:
 
 ```json
 {
   "mcpServers": {
     "jlfbot": {
       "command": "pnpm",
-      "args": ["--dir", "/absolute/path/to/JLFBot", "mcp"]
+      "args": ["--dir", "/absolute/path/to/ASLBot", "mcp"]
     }
   }
 }
@@ -36,7 +36,7 @@ loopback without one. A hosted or shared server with service loopback trust
 session for almost every tool, reads included. To authorize an external MCP
 client:
 
-1. In JLFBot, open **Settings → Phone → Set up a phone** and reveal the
+1. In ASLBot, open **Settings → Phone → Set up a phone** and reveal the
    one-time pairing code.
 2. Exchange it locally (remove spaces from the displayed code):
 
@@ -72,25 +72,25 @@ macOS example:
 {
   "mcpServers": {
     "jlfbot": {
-      "command": "/Applications/JLFBot.app/Contents/MacOS/JLFBot",
-      "args": ["/Applications/JLFBot.app/Contents/Resources/server/mcp-server.js"],
+      "command": "/Applications/ASLBot.app/Contents/MacOS/ASLBot",
+      "args": ["/Applications/ASLBot.app/Contents/Resources/server/mcp-server.js"],
       "env": { "ELECTRON_RUN_AS_NODE": "1" }
     }
   }
 }
 ```
 
-On Windows, use the installed `JLFBot.exe` as `command`, the adjacent
+On Windows, use the installed `ASLBot.exe` as `command`, the adjacent
 `resources\\server\\mcp-server.js` as the argument, and the same `ELECTRON_RUN_AS_NODE=1` environment value.
-The usual per-user install is under `%LOCALAPPDATA%\\Programs\\JLFBot`.
+The usual per-user install is under `%LOCALAPPDATA%\\Programs\\ASLBot`.
 
-On Ubuntu `.deb` installs, the executable is normally `/opt/JLFBot/jlfbot` and the script is
-`/opt/JLFBot/resources/server/mcp-server.js`. Use the same environment value.
+On Ubuntu `.deb` installs, the executable is normally `/opt/ASLBot/jlfbot` and the script is
+`/opt/ASLBot/resources/server/mcp-server.js`. Use the same environment value.
 
 ## Connection discovery
 
-With no configuration, the MCP process probes JLFBot's three desktop ports (`8799`, `18799`, and `28799`)
-and accepts only a health response that identifies itself as JLFBot. This handles the desktop's normal
+With no configuration, the MCP process probes ASLBot's three desktop ports (`8799`, `18799`, and `28799`)
+and accepts only a health response that identifies itself as ASLBot. This handles the desktop's normal
 fallback when another local process already owns port 8799.
 
 Set `JLFBOT_PORT` to force one local port, or `JLFBOT_URL` to use an explicit HTTP(S) origin. Cleartext remote

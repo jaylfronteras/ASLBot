@@ -1,4 +1,4 @@
-// JLFBot ships no analytics client. These tests pin that the shim stays inert:
+// ASLBot ships no analytics client. These tests pin that the shim stays inert:
 // nothing can switch it on and no call reaches the network.
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";

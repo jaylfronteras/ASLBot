@@ -31,7 +31,7 @@ sidecar on `:8810`, `electron/companion-origin-gateway.mjs` opens the managed or
 `cloudflare/control-plane` maps one opaque hostname to that installation. Close the app
 and all four stop, taking routines (`server/routines.ts`) and the webhook receiver
 (`server/webhook-ingress.ts`, `:8800`) with them. The README says this plainly in its
-Status section, and it is the single biggest gap between JLFBot and an "AI employee".
+Status section, and it is the single biggest gap between ASLBot and an "AI employee".
 
 The good news, verified: of the five always-on modules, four already take their
 dependencies as injected parameters — `readSecureCredentials` in
@@ -188,7 +188,7 @@ imports `electron`.
 - Create: `docs/headless.md`, `build/jlfbot.service`, `build/com.jlfbot.serve.plist`
 - Modify: `README.md` (the Status section's honest note about always-on)
 
-- [ ] Write the systemd unit: `Type=simple`, `Restart=on-failure`, `RestartSec=5`, a dedicated non-root user, `StateDirectory=jlfbot`, and `ProtectSystem=strict` with `~/.jlfbot` as the only writable path.
+- [ ] Write the systemd unit: `Type=simple`, `Restart=on-failure`, `RestartSec=5`, a dedicated non-root user, `StateDirectory=jlfbot`, and `ProtectSystem=strict` with `~/.aslbot` as the only writable path.
 - [ ] Write the launchd plist for a Mac mini left running, with `KeepAlive` and `RunAtLoad`.
 - [ ] Write `docs/headless.md`: install, register the installation, the agent CLIs the box needs installed and logged in, the capability table for a headless host, the credential-at-rest tradeoff from Task 1 stated plainly, and the firewall guidance — the companion port must not be exposed directly; use the managed tunnel or a tailnet.
 - [ ] Update the README Status line that currently says webhook triggers use a local receiver rather than an always-on hosted relay. It is about to be less true; say exactly how much less.

@@ -237,7 +237,7 @@ describe("Markdown image metadata", () => {
     expect(markdownImageName("https://example.test/random.png", "Final render")).toBe("Final render");
     expect(markdownImageName("https://example.test/output/Launch%20art.webp")).toBe("Launch art.webp");
     expect(markdownImageName("")).toBe("Image");
-    expect(markdownImageName("C:\\Users\\JLFBot\\chart.png")).toBe("chart.png");
+    expect(markdownImageName("C:\\Users\\ASLBot\\chart.png")).toBe("chart.png");
   });
 
   it("only offers an external action for HTTP sources", () => {
@@ -261,7 +261,7 @@ describe("message-scoped file targets", () => {
     expect(localFilePath("file://server/share/report.pdf")).toBe("//server/share/report.pdf");
     expect(localFilePath("//cdn.example.test/report.pdf")).toBeNull();
     expect(localFilePath("/C:/posix/report.pdf")).toBe("/C:/posix/report.pdf");
-    expect(localFilePath("file:///C:/Users/JLFBot/report.pdf")).toBe("C:/Users/JLFBot/report.pdf");
+    expect(localFilePath("file:///C:/Users/ASLBot/report.pdf")).toBe("C:/Users/ASLBot/report.pdf");
     expect(localFilePath("https://example.test/report.pdf")).toBeNull();
     expect(localFilePath("#section")).toBeNull();
     expect(localFilePath("javascript:alert(1)")).toBeNull();
@@ -269,9 +269,9 @@ describe("message-scoped file targets", () => {
 
   it("preserves supported local file spellings without widening unsafe protocols", () => {
     expect(chatUrlTransform("file:///Users/milind/report.md")).toBe("file:///Users/milind/report.md");
-    expect(chatUrlTransform("C:/Users/JLFBot/report.md")).toBe("C:/Users/JLFBot/report.md");
+    expect(chatUrlTransform("C:/Users/ASLBot/report.md")).toBe("C:/Users/ASLBot/report.md");
     expect(chatUrlTransform("\\\\server\\share\\report.md")).toBe("\\\\server\\share\\report.md");
-    // What rendering hands over for C:\Users\JLFBot\release notes.md.
+    // What rendering hands over for C:\Users\ASLBot\release notes.md.
     expect(chatUrlTransform("C:%5CUsers%5CJLFBot%5Crelease%20notes.md")).toBe("C:\\Users\\JLFBot\\release%20notes.md");
     expect(chatUrlTransform("javascript:alert(1)")).toBe("");
     expect(chatUrlTransform("https://example.test/report.md")).toBe("https://example.test/report.md");
@@ -301,12 +301,12 @@ describe("ChatMarkdown attachments", () => {
 
   it("keeps host paths private while routing them through the scoped file handler", () => {
     const html = renderToStaticMarkup(createElement(ChatMarkdown, {
-      text: "[macOS](file:///Users/milind/report.md) [Windows](C:/Users/JLFBot/report.md)",
+      text: "[macOS](file:///Users/milind/report.md) [Windows](C:/Users/ASLBot/report.md)",
       message: { threadId: "thread-1", messageId: "message-1" },
     }));
     expect(html).toContain('title="Save a copy"');
     expect(html).not.toContain("/Users/milind/report.md");
-    expect(html).not.toContain("C:/Users/JLFBot/report.md");
+    expect(html).not.toContain("C:/Users/ASLBot/report.md");
   });
 
   it("routes a backslash Windows path through the scoped file handlers, every backslash intact", () => {
@@ -314,14 +314,14 @@ describe("ChatMarkdown attachments", () => {
     const preview = vi.spyOn(AttachmentPreview, "MarkdownImagePreview");
     try {
       const html = renderToStaticMarkup(createElement(ChatMarkdown, {
-        text: "[Report](C:\\Users\\JLFBot\\.jlfbot\\report.md)\n\n![Chart](C:\\Users\\JLFBot\\.jlfbot\\chart.png)",
+        text: "[Report](C:\\Users\\ASLBot\\.aslbot\\report.md)\n\n![Chart](C:\\Users\\ASLBot\\.aslbot\\chart.png)",
         message: { threadId: "thread-1", messageId: "message-1" },
       }));
       expect(html).toContain('title="Save a copy"');
       expect(html).not.toContain('href=""');
       expect(html).not.toContain("Image unavailable");
-      expect(save.mock.calls[0]?.[0]).toBe("C:\\Users\\JLFBot\\.jlfbot\\report.md");
-      expect(preview.mock.calls[0]?.[0].filePath).toBe("C:\\Users\\JLFBot\\.jlfbot\\chart.png");
+      expect(save.mock.calls[0]?.[0]).toBe("C:\\Users\\ASLBot\\.aslbot\\report.md");
+      expect(preview.mock.calls[0]?.[0].filePath).toBe("C:\\Users\\ASLBot\\.aslbot\\chart.png");
     } finally {
       save.mockRestore();
       preview.mockRestore();

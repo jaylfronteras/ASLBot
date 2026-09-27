@@ -109,7 +109,7 @@ export function chatUrlTransform(value: string): string {
   // scheme must survive the allow-list so the anchor component sees it
   if (looksLikeThreadRefUrl(value)) return value;
   // Markdown-to-HTML percent-encodes a destination's backslashes, so
-  // C:\Users\JLFBot\report.md arrives as C:%5CUsers%5CJlf%5Creport.md and no
+  // C:\Users\ASLBot\report.md arrives as C:%5CUsers%5CJlf%5Creport.md and no
   // longer looked like a drive path: the link rendered dead and the image as
   // unavailable. Restore the separators; other escapes stay for the server's
   // single decode.

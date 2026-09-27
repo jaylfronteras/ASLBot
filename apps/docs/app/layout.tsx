@@ -8,12 +8,12 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   metadataBase: new URL('https://docs.jlfbot.example.com'),
   title: {
-    default: 'JLFBot Docs',
-    template: '%s · JLFBot Docs',
+    default: 'ASLBot Docs',
+    template: '%s · ASLBot Docs',
   },
   description: 'Install, configure, and extend your local-first team of AI agents.',
   openGraph: {
-    title: 'JLFBot Docs',
+    title: 'ASLBot Docs',
     description: 'Your own team of AI agents, in a chat app.',
     type: 'website',
   },

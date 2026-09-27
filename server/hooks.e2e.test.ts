@@ -55,8 +55,8 @@ function harness(label: string, serverEnv: Record<string, string>, instanceEnv: 
   beforeAll(async () => {
     chmodSync(FAKE_CLAUDE, 0o755);
     home = mkdtempSync(join(tmpdir(), `jlfbot-hooks-${label}-`));
-    mkdirSync(join(home, ".jlfbot"), { recursive: true });
-    writeFileSync(join(home, ".jlfbot", "config.json"), JSON.stringify({
+    mkdirSync(join(home, ".aslbot"), { recursive: true });
+    writeFileSync(join(home, ".aslbot", "config.json"), JSON.stringify({
       instances: {
         claude: {
           driver: "claudeAgent",
@@ -123,7 +123,7 @@ posixOnly("engine hooks e2e (fake Claude honouring the settings hooks)", () => {
       expect(row.tool).not.toHaveProperty("outputPath");
     }
     expect(JSON.stringify(tools)).not.toContain(h.home());
-    const root = join(h.home(), ".jlfbot", "tool-results");
+    const root = join(h.home(), ".aslbot", "tool-results");
     const threads = readdirSync(root);
     expect(threads).toHaveLength(1);
     const dir = join(root, threads[0]!);

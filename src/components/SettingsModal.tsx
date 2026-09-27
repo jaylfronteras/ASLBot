@@ -3,7 +3,7 @@
 // is the stuff shared by every bot: who you are, your keys, and the
 // machine your bots can borrow.
 import { useEffect, useRef, useState } from "react";
-import { Archive, Coins, FlaskConical, KeyRound, Monitor, Palette, ScrollText, Search, TabletSmartphone, Terminal, User, Users, X, Building2 } from "lucide-react";
+import { Archive, Coins, FlaskConical, KeyRound, Palette, ScrollText, Search, TabletSmartphone, Terminal, User, Users, X, Building2 } from "lucide-react";
 import { api, useStore, type AppSettingsSection, type ConfigStatus } from "@/state/store";
 import { browserAvailable, browserUnavailableReason, builtInBrowserEnabled, showToolCallsEnabled, skillAuthoringEnabled } from "@/lib/feature-flags";
 import { localeChoices, type LocaleKey } from "@/locales";
@@ -12,8 +12,7 @@ import { withTourReset } from "@/lib/guided-tour";
 import { completionPatch } from "@/lib/onboarding";
 import { ApiKeyRow, OpenAiCompatUrl, VpsConnection } from "./ApiKeys";
 import { useUpdaterState } from "@/lib/updater";
-import { EnginesSettings } from "./EnginesSettings";
-import { LocalComputerSection } from "./LocalComputerSection";
+import { ProvidersSettings } from "./ProvidersSettings";
 import { CompanionSection } from "./CompanionSection";
 import { ServerPairingCard } from "./ServerPairingCard";
 import { PeopleSection } from "./PeopleSection";
@@ -37,7 +36,7 @@ import { WorkspaceBackupSettings } from "./WorkspaceBackupSettings";
 import { CompanyBackupSettings } from "./CompanyBackupSettings";
 import { cn } from "@/lib/cn";
 import { setShowThreads, useShowThreads } from "@/lib/thread-preferences";
-import { setSimpleMode, useSimpleMode } from "@/lib/simple-mode";
+import { useSimpleMode } from "@/lib/simple-mode";
 
 // `labelKey`, not a label: t() reads the active pack when it is called, so a
 // label resolved here at module scope would freeze the language the app booted
@@ -55,9 +54,8 @@ const SECTIONS: Array<{
   { id: "appearance", labelKey: "settings.section.appearance", icon: Palette, keywords: ["skin", "theme", "appearance", "tools", "tool calls", "threads", "show threads", "hide threads", "sidebar", "display", "simple", "simple mode"] },
   { id: "experimental", labelKey: "settings.section.experimental", icon: FlaskConical, keywords: ["early", "preview", "learn", "skill", "authoring", "browser", "profiles"] },
   { id: "connections", labelKey: "settings.section.connections", icon: KeyRound, keywords: ["keys", "api", "composio", "box", "xai", "vps"] },
-  { id: "engines", labelKey: "settings.section.engines", icon: Terminal, keywords: ["models", "claude", "grok", "providers", "cli"] },
+  { id: "engines", labelKey: "settings.section.engines", icon: Terminal, keywords: ["models", "providers", "openai", "api"] },
   { id: "companion", labelKey: "settings.section.companion", icon: TabletSmartphone, keywords: ["companion", "device", "phone", "desktop", "client", "host", "pair", "pairing", "mobile", "https", "secure", "tailscale", "wifi", "remote", "advanced", "domain", "dns", "self-hosted", "server", "caddy"] },
-  { id: "computer", labelKey: "settings.section.computer", icon: Monitor, keywords: ["vm", "virtual", "desktop"] },
   { id: "usage", labelKey: "settings.section.usage", icon: Coins, keywords: ["tokens", "cost", "billing"] },
   { id: "people", labelKey: "settings.section.people", icon: Users, keywords: ["people", "users", "invite", "sign in", "members", "admins", "access"] },
   { id: "activity", labelKey: "settings.section.activity", icon: ScrollText, keywords: ["activity", "audit", "log", "history", "who changed", "approvals", "decisions", "admin"] },
@@ -269,19 +267,6 @@ function LanguageRow() {
           </option>
         ))}
       </select>
-    </SettingRow>
-  );
-}
-
-function SimpleModeRow() {
-  const enabled = useSimpleMode();
-  return (
-    <SettingRow title={t("settings.simpleMode.title")} subtitle={t("settings.simpleMode.subtitle")}>
-      <Switch
-        checked={enabled}
-        aria-label={t("settings.simpleMode.switch")}
-        onClick={() => setSimpleMode(!enabled)}
-      />
     </SettingRow>
   );
 }
@@ -661,7 +646,6 @@ export function SettingsModal() {
                   <SkinPicker />
                 </Card>
                 <div>
-                  <SimpleModeRow />
                   <ShowThreadsRow />
                   {!remoteActive && <ToolCallsRow />}
                 </div>
@@ -707,7 +691,7 @@ export function SettingsModal() {
             )}
 
             {section === "engines" && (
-              <EnginesSettings />
+              <ProvidersSettings />
             )}
 
             {section === "backups" && <><WorkspaceBackupSettings /><CompanyBackupSettings /></>}
@@ -726,8 +710,6 @@ export function SettingsModal() {
                 {!remoteActive && <CompanionSection profileEmail={state.config?.profile?.email} />}
               </>
             )}
-
-            {section === "computer" && <LocalComputerSection />}
 
             {section === "usage" && <UsageSection />}
             {section === "people" && <PeopleSection />}

@@ -1,5 +1,5 @@
 // Sign in with your email on a hosted server. The emailed code comes from the
-// JLFBot control plane (the account service the desktop companion and
+// ASLBot control plane (the account service the desktop companion and
 // `jlfbot login` already use), and this server decides who is welcome
 // with an allow-list its owner controls. The result is an ordinary local
 // session, the same thing a pairing code produces, so every gate applies.
