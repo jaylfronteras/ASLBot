@@ -481,11 +481,15 @@ export async function launchUi(
     const session: SessionEnv = { home: fixture.info.dataDir, session: `jlfbot-ui-${new URL(fixture.info.url).port}`, chrome };
     const env = sessionEnv(session, parentEnv);
     opened = { binary, env };
-    await agentBrowser(binary, env, ["open", preview.previewUrl], 120_000);
+    // The shipped app stays on the simple layout. These smokes still drive
+    // the inherited thread list, header model picker, and inspector.
+    const previewUrl = new URL(preview.previewUrl);
+    previewUrl.searchParams.set("aslbot-ui", "full");
+    await agentBrowser(binary, env, ["open", previewUrl.href], 120_000);
     checkpoint();
     const handle: UiHandle = {
       url: fixture.info.url,
-      previewUrl: preview.previewUrl,
+      previewUrl: previewUrl.href,
       session: session.session,
       binary,
       home: fixture.info.dataDir,

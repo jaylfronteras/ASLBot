@@ -63,6 +63,7 @@ app.whenReady().then(async () => {
     HOME: home, USERPROFILE: home, JLFBOT_DATA_DIR: home, PATH: "",
     ...(process.env.SystemRoot ? { SystemRoot: process.env.SystemRoot } : {}),
     JLFBOT_PORT: String(harnessPort), JLFBOT_WEBHOOK_PORT: String(webhookPort),
+    ASLBOT_TEST_ENGINES: "1",
     JLFBOT_COMPANION_PORT: String(phonePort), JLFBOT_CONTROL_PORT: String(controlPort),
     FAKE_CLAUDE_MODE: "happy",
   };

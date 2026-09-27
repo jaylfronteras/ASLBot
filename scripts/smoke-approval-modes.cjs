@@ -96,6 +96,7 @@ app.whenReady().then(async () => {
       ...(process.env.SystemRoot ? { SystemRoot: process.env.SystemRoot } : {}),
       JLFBOT_PORT: String(port), JLFBOT_WEBHOOK_PORT: String(webhookPort),
       JLFBOT_TEST_INTERNAL_CAPABILITY_KEY: testCapabilityKey,
+      ASLBOT_TEST_ENGINES: "1",
       FAKE_CLAUDE_MODE: "happy", FAKE_CLAUDE_DUMP: dump,
       FAKE_ACP_MODE: "permission", FAKE_ACP_AUTH_METHOD: "oauth-personal",
       FAKE_ACP_MODELS: "gemini-3.8-flash-high,gemini-3.8-flash-low", FAKE_ACP_MODES: "default,yolo",

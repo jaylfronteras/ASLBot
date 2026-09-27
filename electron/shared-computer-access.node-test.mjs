@@ -244,10 +244,10 @@ test("a protected directory spelled in another case is still refused", async t =
   grant.protectedPaths = [path.join(dir, "ASLBot")];
   folder.write = true;
   await assert.rejects(run({ action: "read_file", path: "ASLBot/credentials.bin" }), /Desktop credentials/);
-  await assert.rejects(run({ action: "read_file", path: "jlfbot/credentials.bin" }), /Desktop credentials/);
-  await assert.rejects(run({ action: "read_file", path: "JLFBOT/credentials.bin" }), /Desktop credentials/);
-  await assert.rejects(run({ action: "list_files", path: "jlfbot" }), /Desktop credentials/);
-  await assert.rejects(run({ action: "write_file", path: "jlfbot/computer-sharing.json", content: "{}" }), /sharing settings/);
+  await assert.rejects(run({ action: "read_file", path: "aslbot/credentials.bin" }), /Desktop credentials/);
+  await assert.rejects(run({ action: "read_file", path: "ASLBOT/credentials.bin" }), /Desktop credentials/);
+  await assert.rejects(run({ action: "list_files", path: "aslbot" }), /Desktop credentials/);
+  await assert.rejects(run({ action: "write_file", path: "aslbot/computer-sharing.json", content: "{}" }), /sharing settings/);
 });
 
 test("a protected directory spelled in another Unicode normalization is still refused", async t => {

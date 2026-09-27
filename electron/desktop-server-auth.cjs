@@ -1,6 +1,8 @@
 "use strict";
 
-const DESKTOP_MUTATION_HEADER = "X-ASLBot-Desktop-Owner";
+// Wire contract with server/request-auth.ts (`x-jlfbot-desktop-owner`).
+// The name is an internal capability header, not the product title.
+const DESKTOP_MUTATION_HEADER = "X-JLFBot-Desktop-Owner";
 
 /** Add the per-launch owner capability to main-process requests. Chromium's
  * webRequest hook cannot see Node fetch, so both paths use this one header
