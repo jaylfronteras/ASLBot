@@ -25,10 +25,16 @@ final class ThreadNavigationUITests: XCTestCase {
         let app = launchPreview(islandIntro: "always")
         openGmail(in: app)
 
+        // The island intro and the push onto the chat both settle late on a
+        // loaded CI runner. 10s was not enough for Threads to enter the tree
+        // after the list had already gone idle.
+        let opened = NSPredicate(format: "label == %@", "Switch thread: Triage Gmail")
+        XCTAssertEqual(
+            XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: opened, object: app.buttons["thread-switcher"])], timeout: 30),
+            .completed
+        )
         let topBarThreads = app.buttons["header-threads"]
-        // The chat header settles late on a loaded CI runner. 5s timed out
-        // here while the thread open itself was correct, same as assertThread.
-        XCTAssertTrue(topBarThreads.waitForExistence(timeout: 10))
+        XCTAssertTrue(topBarThreads.waitForExistence(timeout: 30))
         topBarThreads.tap()
         let iCloud = app.buttons["thread-preview-icloud"]
         XCTAssertTrue(iCloud.waitForExistence(timeout: 5))

@@ -263,6 +263,10 @@ struct ChatView: View {
                     .frame(maxWidth: .infinity, alignment: .top)
                     .ignoresSafeArea(edges: .top)
                     .allowsHitTesting(false)
+                    // Decorative: the header controls stay in the accessibility
+                    // tree while the face is on screen. A covering element here
+                    // made XCTest treat Threads as missing for the whole intro.
+                    .accessibilityHidden(true)
                 }
                 .task {
                     // grow, hold a beat, shrink — the face rides along
