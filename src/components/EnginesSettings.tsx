@@ -14,6 +14,7 @@ import { cn } from "@/lib/cn";
 import { t } from "@/lib/i18n";
 import { EngineSetup, EngineUpdateNotice, EngineWarningNotice } from "./EngineSetup";
 import { AddClaudeAccount, ClaudeAccountSettings } from "./ClaudeAccountSettings";
+import { ImageModelSettings } from "./ImageModelSettings";
 import { CodexAccountSettings } from "./CodexAccountSettings";
 
 interface ProbeResult {
@@ -274,6 +275,7 @@ function EngineRow({ instance }: { instance: InstanceInfo }) {
             <p className="flex items-center gap-1.5 text-[12px] text-success"><Check size={13} />{t("engineSetup.claude.connectedAccount")}</p>
           )
       )}
+      {instance.driverKind === "openai-compat" && <ImageModelSettings instance={instance} />}
       <details className="mt-3 rounded-xl border border-hairline/40 px-3 py-2.5">
         <summary className="cursor-pointer text-[12px] font-medium text-ink-secondary hover:text-ink">{t("engines.library.advanced")}</summary>
         <p className="mt-2 text-[12px] leading-relaxed text-ink-secondary">{t("engines.footer")}</p>
@@ -344,10 +346,11 @@ function EngineRow({ instance }: { instance: InstanceInfo }) {
 
 export function EnginesSettings() {
   const { state } = useStore();
-  // every KNOWN-driver instance has cliDefault; unknown-driver shadows have
-  // neither unless an override was set. Including them keeps a Reset-able row
-  // (and a Set CLI… path) for engines the running build doesn't recognize.
-  const rows = state.instances.filter((i) => i.readOnly || i.cli !== undefined || i.cliDefault !== undefined || i.snapshot.state === "unavailable");
+  // CLI engines have cli or cliDefault. Unknown-driver shadows keep a
+  // Reset-able row when an override was set or the snapshot is unavailable.
+  // A custom OpenAI-compatible engine has neither CLI field, and a working
+  // one is available, so it is included on its own for per-model image support.
+  const rows = state.instances.filter((i) => i.readOnly || i.driverKind === "openai-compat" || i.cli !== undefined || i.cliDefault !== undefined || i.snapshot.state === "unavailable");
 
   return (
     <div className="flex min-w-0 flex-col gap-6 pb-2">
