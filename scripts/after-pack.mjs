@@ -1,6 +1,5 @@
 import { chmod, lstat, readFile, readdir } from "node:fs/promises";
 import path from "node:path";
-import { LICENSE_FILES } from "./cua-linux-release.mjs";
 import {
   executableTarget,
   verifyCloudflaredExecutable,
@@ -72,7 +71,7 @@ async function validateCloudflared(resources, platform, required) {
 export default async function afterPack(context) {
   const resources = context.packager?.getResourcesDir?.(context.appOutDir) ?? (
     context.electronPlatformName === "darwin"
-      ? path.join(context.appOutDir, "JLFBot.app", "Contents", "Resources")
+      ? path.join(context.appOutDir, "ASLBot.app", "Contents", "Resources")
       : path.join(context.appOutDir, "resources")
   );
   await validateCloudflared(resources, context.electronPlatformName, Boolean(context.packager));
@@ -90,17 +89,12 @@ export default async function afterPack(context) {
   }
 
   if (context.electronPlatformName !== "linux") return;
-
   const cuaRoot = path.join(resources, "cua-linux-x64");
-  const licenses = path.join(cuaRoot, "licenses");
-  for (const directory of [context.appOutDir, resources, cuaRoot, licenses]) {
-    await requireRealDirectory(directory);
-  }
-  for (const executable of ["cua-driver", "cua-cursor-theme"]) {
-    await requireRegularFile(path.join(cuaRoot, executable), 0o755);
-  }
-  await requireRegularFile(path.join(cuaRoot, "release.json"), 0o644);
-  for (const license of LICENSE_FILES) {
-    await requireRegularFile(path.join(licenses, license), 0o644);
+  const bundledComputer = await lstat(cuaRoot).then(() => true, (error) => {
+    if (error?.code === "ENOENT") return false;
+    throw error;
+  });
+  if (bundledComputer) {
+    throw new Error("ASLBot packages must not include a computer-use runtime");
   }
 }

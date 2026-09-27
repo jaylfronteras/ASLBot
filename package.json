@@ -1,18 +1,18 @@
 {
-  "name": "jlfbot",
+  "name": "aslbot",
   "private": true,
   "version": "0.1.86",
-  "description": "A private, local-first personal AI agent workspace.",
-  "homepage": "https://github.com/jaylfronteras/JLFBot",
+  "description": "A lite multi-bot team app that talks to OpenAI-compatible models.",
+  "homepage": "https://github.com/jaylfronteras/ASLBot",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jaylfronteras/JLFBot.git"
+    "url": "https://github.com/jaylfronteras/ASLBot.git"
   },
   "author": {
     "name": "Jejomar Fronteras"
   },
   "license": "Apache-2.0",
-  "desktopName": "com.jlfbot.app.desktop",
+  "desktopName": "com.agilesolutionlabs.aslbot.desktop",
   "type": "module",
   "main": "electron/main.mjs",
   "engines": {
@@ -61,15 +61,15 @@
     "build:cua:linux:offline": "node scripts/prepare-cua-linux.mjs --offline",
     "build:updater": "node scripts/bundle-updater.mjs",
     "package:prepare": "pnpm build && pnpm build:server && pnpm build:companion && pnpm build:updater && pnpm build:android-tools && pnpm build:cloudflared && pnpm build:browser",
-    "package:mac": "pnpm package:prepare && pnpm build:speech && pnpm build:cua && electron-builder --mac --publish never",
-    "package:win": "pnpm package:prepare && pnpm build:cua:win && electron-builder --win --publish never",
-    "package:linux": "pnpm package:prepare && pnpm build:cua:linux && electron-builder --linux --x64 --publish never",
-    "package:linux:offline": "pnpm package:prepare && pnpm build:cua:linux:offline && electron-builder --linux --x64 --publish never",
+    "package:mac": "pnpm package:prepare && pnpm build:speech && electron-builder --mac --publish never",
+    "package:win": "pnpm package:prepare && electron-builder --win --publish never",
+    "package:linux": "pnpm package:prepare && electron-builder --linux --x64 --publish never",
+    "package:linux:offline": "pnpm package:prepare && electron-builder --linux --x64 --publish never",
     "smoke:deb-command": "node scripts/smoke-deb-command.mjs",
     "smoke:linux-update": "xvfb-run -a electron --no-sandbox scripts/smoke-linux-update.mjs",
     "smoke:linux-package": "node scripts/run-linux-package-smoke.mjs",
     "smoke:cua-x11-input": "node scripts/smoke-cua-x11-input.mjs",
-    "package:linux:dir": "pnpm package:prepare && pnpm build:cua:linux && electron-builder --linux dir --x64 --publish never",
+    "package:linux:dir": "pnpm package:prepare && electron-builder --linux dir --x64 --publish never",
     "package": "pnpm package:mac",
     "test:packaged-server": "pnpm build:server && node scripts/smoke-packaged-server.mjs",
     "broker:types": "wrangler types --config cloudflare/composio-broker/wrangler.jsonc cloudflare/composio-broker/worker-configuration.d.ts",
@@ -84,7 +84,6 @@
   "dependencies": {
     "@clack/prompts": "1.7.0",
     "@hpke/core": "1.9.0",
-    "@trycua/cua-driver": "0.28.2",
     "ajv": "8.17.1",
     "ajv-formats": "3.0.1",
     "clsx": "^2.1.1",

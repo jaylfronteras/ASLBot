@@ -206,6 +206,9 @@ import {
 import type { GroupGoalRunCardData, GroupGoalRunStatus } from "../shared/group-goal-run.ts";
 
 import { BUILT_IN_DRIVERS } from "./drivers/builtIn.ts";
+import { listProviders, parseProviderInput, PROVIDER_PRESETS, removeProvider, writeProvider } from "./providers.ts";
+/** ASLBot never mounts a bot computer: no host CUA, Docker/Podman VM, Box, or VPS. */
+const COMPUTER_USE = false;
 import { getOrCreateChannel, mirrorActivity, mirrorExchange, mirrorReply, type CommsBus } from "./comms-visibility.ts";
 import { readMessageText, recallMessages, recentMessages, searchMessages, closeMessageDb, chatFollowups, cancelledChatFollowup, settleChatFollowups, threadsReferencing } from "./message-db.ts";
 import { briefCrossingLabel, claimRecallCrossings, recallCrossingLabel } from "./recall-disclosure.ts";
@@ -510,7 +513,7 @@ import { json, onJsonBody, parsedBodyOf, readBody } from "./harness/http.ts";
 import { ROUTES, dispatchRoutes } from "./routes/table.ts";
 import { createHostedSlackRoutes } from "./routes/hosted-slack.ts";
 
-const PORT = Number(process.env.JLFBOT_PORT || process.env.OGB_PORT || 8799);
+const PORT = Number(process.env.ASLBOT_PORT || process.env.JLFBOT_PORT || process.env.OGB_PORT || 8899);
 const WEBHOOK_PORT = Number(process.env.JLFBOT_WEBHOOK_PORT || PORT + 1);
 // Behind a proxy or tunnel, the base URL senders should use (docs/self-hosting.md).
 const WEBHOOK_PUBLIC_URL = process.env.JLFBOT_WEBHOOK_PUBLIC_URL || undefined;
@@ -7187,7 +7190,7 @@ async function startTurn(
   directTurnDispatchClaims.set(threadId, { id: dispatchClaimId, botId, threadId, phase: "setup" });
   directTurnBots.set(threadId, bot);
   beginInternalCapabilityGeneration(threadId, dispatchClaimId);
-  if (!opts?.computerSelectionContinuation && !opts?.cardContinuation && !opts?.automationSource && !opts?.unattended &&
+  if (COMPUTER_USE && !opts?.computerSelectionContinuation && !opts?.cardContinuation && !opts?.automationSource && !opts?.unattended &&
       !opts?.commsDepth && !opts?.coordination && !inheritedTeamComputer(bot) && bot.computer !== "off" && agentsMounted) {
     const source = store.activePath(threadId).findLast(message => message.id === userMessage?.id && message.role === "user" && !message.peerAsk);
     if (source) computerSelectionTurns.set(threadId, { generation: dispatchClaimId, botId: bot.id, source, text });
@@ -7437,7 +7440,7 @@ async function startTurn(
       if (dwebUrl) integrations.dweb = { url: dwebUrl };
       // Cloud routines always use Box/BoxAgent. The per-bot backend applies
       // only to ordinary turns that mount a computer into the local agent.
-      const teamComputer = inheritedTeamComputer(bot);
+      const teamComputer = COMPUTER_USE ? inheritedTeamComputer(bot) : undefined;
       const cloudBackend = teamComputer || opts?.runOn === "cloud" || bot.cloudBackend !== "vps" ? "box" : "vps";
       const mountsComputerMcp = computerMcpFor(instance, model);
       // Box's native runner owns its computer tools. Local drivers mount
@@ -7455,10 +7458,10 @@ async function startTurn(
       // choice, so those ignore the pin.
       const dispatchTask = store.taskByThread(bot.id, threadId);
       if (plan.clearPin && dispatchTask) store.patchTask(bot.id, threadId, { surface: undefined });
-      if (plan.computer !== undefined && plan.computer !== "cloud" && instance.driverKind === "boxAgent") {
+      if (COMPUTER_USE && plan.computer !== undefined && plan.computer !== "cloud" && instance.driverKind === "boxAgent") {
         throw new Error("the Computer engine works on the cloud computer — set Works on to Cloud, or choose another engine");
       }
-      const wants = plan.computer;
+      const wants = COMPUTER_USE ? plan.computer : undefined;
       // A place the organisation disallows is refused before anything is
       // prepared; Auto below simply skips disallowed places.
       const wantedKind = teamComputer ? "box" : wants === "local" ? "thisComputer" : wants === "vm" ? "localVm"
@@ -7637,9 +7640,9 @@ async function startTurn(
           return false;
         }
       };
-      if (wants === "vm") {
+      if (COMPUTER_USE && wants === "vm") {
         if (await attachLocalVm(true)) computerKind = "vm";
-      } else if (wants === "local") {
+      } else if (COMPUTER_USE && wants === "local") {
         integrations.localComputer = await mountHostComputer(resourceOwner, bot.id, mountsLocalComputer);
         computerKind = "local";
       }
@@ -7647,7 +7650,7 @@ async function startTurn(
       // A VPS is a local-agent computer mount, never a remote agent runner.
       // Explicit Cloud may prepare/start it. Auto remains read-only unless
       // the person explicitly opted this bot into remote lifecycle actions.
-      if ((wants === "cloud" || (wants === undefined && managedPolicy.computerAllowed("vps"))) && cloudBackend === "vps") {
+      if (COMPUTER_USE && (wants === "cloud" || (wants === undefined && managedPolicy.computerAllowed("vps"))) && cloudBackend === "vps") {
         const unsupported = vps.vpsDriverError(instance.driverKind, mountsComputerMcp);
         if (unsupported && wants === "cloud") throw new Error(unsupported);
         if (unsupported && wants === undefined) autoVpsProblem = unsupported;
@@ -7695,13 +7698,13 @@ async function startTurn(
 
       // Cloud is strict when selected. Only the native Box engine can reuse
       // a Box on Auto; local engines have no relay for its desktop tools.
-      if (teamComputer) {
+      if (COMPUTER_USE && teamComputer) {
         const attached = await attachTeamBox(teamComputer, bot.id, resourceOwner, mountsCloudComputer, instance.driverKind === "boxAgent");
         integrations.computer = attached.integration;
         previewCapture = attached.capture;
         computerKind = "box";
       }
-      if (!teamComputer && mountsCloudComputer && (wants === "cloud" || wants === undefined) && cloudBackend === "box" && box.boxConfigured(cfg)) {
+      if (COMPUTER_USE && !teamComputer && mountsCloudComputer && (wants === "cloud" || wants === undefined) && cloudBackend === "box" && box.boxConfigured(cfg)) {
         const attached = await attachBotBox(bot, resourceOwner, {
           explicitCloud: wants === "cloud",
           canMount: mountsCloudComputer,
@@ -7715,10 +7718,10 @@ async function startTurn(
           }
         }
       }
-      if (wants === "cloud" && cloudBackend === "box" && !box.boxConfigured(cfg)) {
+      if (COMPUTER_USE && wants === "cloud" && cloudBackend === "box" && !box.boxConfigured(cfg)) {
         throw new Error("Cloud box is not configured — add a Box API key or choose Local VM");
       }
-      if (wants === "cloud" && cloudBackend === "box" && !integrations.computer) {
+      if (COMPUTER_USE && wants === "cloud" && cloudBackend === "box" && !integrations.computer) {
         throw new Error("the cloud computer could not be created or reached");
       }
 
@@ -7727,12 +7730,13 @@ async function startTurn(
       // Auto reaches a Local VM this bot already has before it ever touches the
       // host's own desktop: on a headless server that VM is the only desktop
       // there is, and a person who prepared one meant it to be used.
-      if (wants === undefined && !integrations.computer && !integrations.localComputer && managedPolicy.computerAllowed("localVm") && await attachLocalVm(false)) computerKind = "vm";
+      if (COMPUTER_USE && wants === undefined && !integrations.computer && !integrations.localComputer && managedPolicy.computerAllowed("localVm") && await attachLocalVm(false)) computerKind = "vm";
       // An unattended run on a bot with a VPS configured never lands on the
       // host's own desktop instead: a scheduled job clicking on someone's
       // laptop is worse than a scheduled job that fails and says why.
       const unattendedVps = cloudBackend === "vps" && Boolean(opts?.automationSource);
       if (
+        COMPUTER_USE &&
         !integrations.computer &&
         !integrations.localComputer &&
         wants === undefined &&
@@ -7752,6 +7756,7 @@ async function startTurn(
         }
       }
       if (
+        COMPUTER_USE &&
         wants === undefined &&
         cloudBackend === "vps" &&
         !integrations.computer &&
@@ -9477,7 +9482,7 @@ async function runGroupMemberTurn(
   // "Works on" decides here exactly as it decides a 1:1 turn: the same
   // shared policy, so a room cannot become the loophole that hands a bot
   // set to Off the browser its own settings withhold everywhere else.
-  const roomTeamComputer = inheritedTeamComputer(readyBot);
+  const roomTeamComputer = COMPUTER_USE ? inheritedTeamComputer(readyBot) : undefined;
   const roomPlan = resolveSurface({
     destination: roomTeamComputer ? "cloud" : readyBot.computer,
     browserOn:
@@ -9493,7 +9498,7 @@ async function runGroupMemberTurn(
   if (roomPlaceRefusal) throw Object.assign(new Error(roomPlaceRefusal), { code: "managed_policy" });
   // The Computer engine runs on the Box; this computer has no tools it can
   // reach, exactly as a bot thread refuses it.
-  if (roomPlan.computer === "local" && instance.driverKind === "boxAgent") {
+  if (COMPUTER_USE && roomPlan.computer === "local" && instance.driverKind === "boxAgent") {
     throw new Error("the Computer engine works on the cloud computer — set Works on to Cloud, or choose another engine");
   }
   // One place per room turn as well: a team computer reached on Auto means
@@ -9513,7 +9518,7 @@ async function runGroupMemberTurn(
     return false;
   }
 
-  if (roomTeamComputer) {
+  if (COMPUTER_USE && roomTeamComputer) {
     const attached = await attachTeamBox(roomTeamComputer, readyBot.id, resourceOwner,
       instance.driverKind === "boxAgent", instance.driverKind === "boxAgent");
     if (isCancelled?.() || groupSpeakers.get(threadId) !== roomSpeaker ||
@@ -9528,13 +9533,13 @@ async function runGroupMemberTurn(
   const roomSetupIsCurrent = () => !isCancelled?.() &&
     groupSpeakers.get(threadId) === roomSpeaker &&
     activeInternalGenerationByThread.get(threadId) === internalGeneration;
-  if (!roomTeamComputer && roomPlan.computer === "local") {
+  if (COMPUTER_USE && !roomTeamComputer && roomPlan.computer === "local") {
     integrations.localComputer = await mountHostComputer(
       resourceOwner, readyBot.id, localComputerMcpFor(instance, preparedSelection.model));
     if (!roomSetupIsCurrent()) return false;
     roomComputerKind = "local";
   }
-  if (!roomTeamComputer && roomPlan.computer === "cloud") {
+  if (COMPUTER_USE && !roomTeamComputer && roomPlan.computer === "cloud") {
     if (turnProvider(readyBot) === "vps") {
       const unsupported = vps.vpsDriverError(instance.driverKind, computerMcpFor(instance, preparedSelection.model));
       if (unsupported) throw new Error(unsupported);
@@ -9568,7 +9573,7 @@ async function runGroupMemberTurn(
 
   // Room and Goal turns use the speaker's desktop, never the coordinator's.
   // Claim the same lease as direct turns before asynchronous VM setup.
-  if (readyBot.computer === "vm") {
+  if (COMPUTER_USE && readyBot.computer === "vm") {
     if (!computerMcpFor(instance, preparedSelection.model) || instance.driverKind === "boxAgent") {
       throw new Error(instance.driverKind === "openai-compat" && !catalogModelAcceptsImages(instance.models, preparedSelection.model)
         ? "this model is not marked as accepting images — turn on image support for it in Settings → Engines"
@@ -12269,7 +12274,7 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
     // A stranger learns only the app name; pid (the desktop boot probe keys
     // on it) and the static flag stay behind the gate below.
     if (method === "GET" && path === "/api/health" && !gate.auth) {
-      return json(res, 200, { app: "jlfbot" });
+      return json(res, 200, { app: "aslbot" });
     }
     // The brand is public too: the sign-in page must carry the deployment's
     // name and icon before anyone has a session, and it holds nothing secret.
@@ -18187,7 +18192,7 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
     // child proves it is OURS by echoing its pid (a stray dev server has
     // the same API shape but a different pid)
     if (method === "GET" && path === "/api/health") {
-      return json(res, 200, { app: "jlfbot", pid: process.pid, static: Boolean(STATIC_DIR), capabilities: {
+      return json(res, 200, { app: "aslbot", pid: process.pid, static: Boolean(STATIC_DIR), capabilities: {
         guardedMessages: 1, guardedRequests: 1, guardedFullAccess: 1, guardedOnBehalfOf: 1,
         ...(sharedWorkspaceFullAccessEnabled() ? { sharedWorkspaceFullAccess: 1 } : {}),
       } });
@@ -18401,6 +18406,50 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
       // this the answer is frozen at boot and "check again" is a no-op.
       resetPathCache();
       return json(res, 200, { instances: await describeInstances() });
+    }
+    if (method === "GET" && path === "/api/providers") {
+      return json(res, 200, { presets: PROVIDER_PRESETS, providers: listProviders(cfg) });
+    }
+    if (method === "POST" && path === "/api/providers") {
+      if (!String(req.headers["content-type"] ?? "").toLowerCase().startsWith("application/json")) {
+        return json(res, 415, { error: "content-type must be application/json" });
+      }
+      let input;
+      try { input = parseProviderInput(await readBody(req)); }
+      catch (error) { return json(res, 400, { error: error instanceof Error ? error.message : "Invalid provider" }); }
+      if (providerConfigBusy) return json(res, 409, { error: "provider settings are already being updated" });
+      providerConfigBusy = true;
+      try {
+        const written = writeProvider(cfg, input);
+        await persistProviderInstance(written.id, written.instances);
+        broadcast({ kind: "config", ...configStatus() });
+        return json(res, 201, { id: written.id, providers: listProviders(cfg) });
+      } catch (error) {
+        return json(res, 400, { error: error instanceof Error ? error.message : "Could not save the provider" });
+      } finally { providerConfigBusy = false; }
+    }
+    const providerRoute = /^\/api\/providers\/([\w.-]+)$/.exec(path);
+    if (providerRoute && (method === "PATCH" || method === "DELETE")) {
+      const providerId = providerRoute[1];
+      if (method === "PATCH" && !String(req.headers["content-type"] ?? "").toLowerCase().startsWith("application/json")) {
+        return json(res, 415, { error: "content-type must be application/json" });
+      }
+      if (providerConfigBusy) return json(res, 409, { error: "provider settings are already being updated" });
+      providerConfigBusy = true;
+      try {
+        if (method === "DELETE") {
+          const instances = removeProvider(cfg, providerId);
+          await persistProviderInstance(providerId, instances);
+        } else {
+          const input = parseProviderInput(await readBody(req), true);
+          const written = writeProvider(cfg, input, providerId);
+          await persistProviderInstance(written.id, written.instances);
+        }
+        broadcast({ kind: "config", ...configStatus() });
+        return json(res, 200, { providers: listProviders(cfg) });
+      } catch (error) {
+        return json(res, 400, { error: error instanceof Error ? error.message : "Could not update the provider" });
+      } finally { providerConfigBusy = false; }
     }
     const companyMutation = /^\/api\/instances\/(company\.[\w.-]+)(?:\/|$)/.exec(path);
     if (hostedModels && path.startsWith("/api/instances/") && method !== "GET") return json(res, 403, { error: HOSTED_PROVIDER_SETTINGS_ERROR });

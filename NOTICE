@@ -1,3 +1,11 @@
+ASLBot
+Copyright 2026 Agile Solution Labs and Jejomar Fronteras
+
+ASLBot is a stripped product based on JLFBot by Jejomar Fronteras
+(https://github.com/jaylfronteras/JLFBot), used under the Apache License,
+Version 2.0. CLI agent engines and computer-use (Docker, local VM, and
+host control) are not part of ASLBot. JLFBot remains a separate project.
+
 JLFBot
 Copyright 2026 Jejomar Fronteras (modifications)
 

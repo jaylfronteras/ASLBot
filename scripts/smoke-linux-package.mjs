@@ -26,7 +26,7 @@ if (signalShutdown && !bundled) {
   throw new Error("signal-shutdown smoke requires the bundled runtime mode");
 }
 const executable = path.resolve(
-  process.env.JLFBOT_SMOKE_EXECUTABLE ?? path.join(root, "release", "linux-unpacked", "jlfbot"),
+  process.env.JLFBOT_SMOKE_EXECUTABLE ?? path.join(root, "release", "linux-unpacked", "aslbot"),
 );
 if (!existsSync(executable)) throw new Error(`[smoke-linux-package] missing executable: ${executable}`);
 
@@ -37,15 +37,15 @@ const xdgRuntime = path.join(sandbox, "runtime");
 const marker = path.join(sandbox, "cua-invocations.ndjson");
 const fakeState = path.join(sandbox, "cua-serve-count");
 const sentinel = path.join(sandbox, "cua-driver");
-mkdirSync(path.join(home, ".jlfbot"), { recursive: true });
+mkdirSync(path.join(home, ".aslbot"), { recursive: true });
 mkdirSync(xdgConfig, { recursive: true });
 mkdirSync(xdgRuntime, { recursive: true, mode: 0o700 });
 chmodSync(xdgRuntime, 0o700);
 writeFileSync(
-  path.join(home, ".jlfbot", "config.json"),
+  path.join(home, ".aslbot", "config.json"),
   JSON.stringify({ instances: { ghost: { driver: "not-a-real-driver", displayName: "Ghost" } } }),
 );
-for (const appName of ["jlfbot", "JLFBot"]) {
+for (const appName of ["aslbot", "ASLBot"]) {
   const userData = path.join(xdgConfig, appName);
   mkdirSync(userData, { recursive: true, mode: 0o700 });
   chmodSync(userData, 0o700);
@@ -271,322 +271,32 @@ async function stopProcess() {
 
 try {
   const result = await until(async () => smokeResult, "the packaged renderer smoke result");
-  const {
-    capabilities,
-    cuaRuntime,
-    cuaCrashReason,
-    cuaRetryStatus,
-    displayMediaRequests,
-    health,
-    initialCapabilities,
-    location,
-    title,
-  } = result;
-  if (health?.app !== "jlfbot" || health.static !== true) {
+  const { capabilities, health, location, title } = result;
+  if (health?.app !== "aslbot" || health.static !== true) {
     throw new Error(`unexpected embedded health response: ${JSON.stringify(health)}`);
   }
-  if (!String(title).includes("JLFBot")) throw new Error(`unexpected renderer title: ${title}`);
+  if (!String(title).includes("ASLBot")) throw new Error(`unexpected renderer title: ${title}`);
   if (capabilities.host.platform !== "linux") throw new Error("renderer did not report Linux");
   if (capabilities.host.session !== (wayland ? "wayland" : "x11")) {
     throw new Error(`renderer did not report the ${wayland ? "Wayland" : "X11"} contract`);
   }
-  const expectedPreview = wayland ? "portal-picker" : "direct";
-  if (!capabilities.screenPreview.available || capabilities.screenPreview.interaction !== expectedPreview) {
-    throw new Error(`${wayland ? "Wayland" : "X11"} screen preview capability was not available`);
-  }
-  if (capabilities.dictation.available) throw new Error("dictation must be unavailable on Linux");
-  if (sessionBlocked) {
-    if (
-      initialCapabilities.localComputer.available ||
-      initialCapabilities.localComputer.enabled ||
-      initialCapabilities.localComputer.reasonCode !== "linux-wayland-seat-safety-blocked"
-    ) {
-      throw new Error(
-        `Linux release did not fail closed: ${JSON.stringify(initialCapabilities.localComputer)}`,
-      );
-    }
-  } else {
-    if (!initialCapabilities.localComputer.available && initialCapabilities.localComputer.reasonCode !== "opt-in-required") {
-      throw new Error(
-        `initial Linux CUA runtime was not ready: ${JSON.stringify(initialCapabilities.localComputer)}`,
-      );
-    }
-    if (initialCapabilities.localComputer.available && initialCapabilities.localComputer.support !== "limited") throw new Error("Linux CUA was not marked beta/limited");
-    if (wayland && (
-      initialCapabilities.localComputer.session !== "wayland" ||
-      initialCapabilities.localComputer.compositor !== "gnome-mutter"
-    )) {
-      throw new Error("initial Linux CUA runtime did not publish the guarded GNOME Wayland contract");
-    }
-    if (!bundled && !hardDeath) {
-      if (cuaCrashReason !== "daemon-exited") {
-        throw new Error("daemon crash did not invalidate local control");
-      }
-      if (cuaRetryStatus?.status !== "ready" || !capabilities.localComputer.available) {
-        throw new Error("explicit CUA retry did not create a ready generation");
-      }
-    }
+  if (capabilities.dictation?.available) throw new Error("dictation must be unavailable on Linux");
+  if (capabilities.localComputer?.available) {
+    throw new Error(`computer use is not part of ASLBot: ${JSON.stringify(capabilities.localComputer)}`);
   }
   if (result.hardwareAccelerationEnabled !== false) {
     throw new Error("Linux package did not disable hardware acceleration before startup");
   }
-  if (displayMediaRequests !== 0) throw new Error("launch triggered display capture without user intent");
   await until(async () => brokerRequests > 0, "the optional slow-broker request");
-  if (sessionBlocked) {
-    await waitForExit();
-    if (existsSync(marker)) throw new Error("release safety block still invoked a CUA executable");
-    const activeUserData = ["jlfbot", "JLFBot"]
-      .map((name) => path.join(xdgConfig, name))
-      .find((directory) => existsSync(path.join(directory, "cua-connection.json")));
-    if (!activeUserData) throw new Error("release safety smoke could not locate the CUA descriptor");
-    const preference = JSON.parse(
-      readFileSync(path.join(activeUserData, "cua-local-control.json"), "utf8"),
-    );
-    if (preference.linuxLocalControlEnabled !== false) {
-      throw new Error("release safety block did not clear the durable Linux opt-in");
-    }
-    console.log(
-      `[smoke-linux-package] OK (${wayland ? "GNOME/Wayland" : path.basename(executable)}): slow optional broker did not block first paint and Wayland CUA failed closed`,
-    );
-  } else if (bundled) {
-    if (signalShutdown) child.kill("SIGTERM");
-    await waitForExit();
-    const staleHealth = await fetch(new URL("/api/health", location)).catch(() => null);
-    if (staleHealth?.ok) throw new Error("embedded harness remained reachable after Electron quit");
-    const appImage = executable.endsWith(".AppImage");
-    if (cuaCrashReason !== null || cuaRetryStatus !== null) {
-      throw new Error("bundled smoke unexpectedly entered the fake crash/retry lane");
-    }
-    if (
-      cuaRuntime?.driverSource !== "bundled" ||
-      cuaRuntime.driverVersion !== "0.19.3" ||
-      (appImage
-        ? cuaRuntime.appImagePrivateStage !== true || cuaRuntime.exactBundledPath !== false
-        : cuaRuntime.exactBundledPath !== true ||
-          !String(cuaRuntime.driverPath).endsWith("/resources/cua-linux-x64/cua-driver"))
-    ) {
-      throw new Error(`packaged Electron did not select its bundled driver: ${JSON.stringify(cuaRuntime)}`);
-    }
-    if (
-      cuaRuntime.mcpEnv?.CUA_DRIVER_RS_UPDATE_CHECK !== "false" ||
-      cuaRuntime.mcpEnv?.CUA_DRIVER_RS_TELEMETRY_ENABLED !== "false"
-    ) {
-      throw new Error("packaged MCP descriptor did not disable update checks and telemetry");
-    }
-    if (existsSync(cuaRuntime.socketPath) || existsSync(cuaRuntime.pidFile)) {
-      throw new Error("packaged CUA runtime files remained after Electron quit");
-    }
-    if (appImage && existsSync(path.dirname(cuaRuntime.driverPath))) {
-      throw new Error("AppImage private CUA stage remained after Electron quit");
-    }
-    if (existsSync(marker)) {
-      throw new Error(`packaged app invoked the ambient driver:\n${readFileSync(marker, "utf8")}`);
-    }
-    const userData = ["jlfbot", "JLFBot"]
-      .map((name) => path.join(xdgConfig, name))
-      .find((directory) => existsSync(path.join(directory, "cua-connection.json")));
-    if (!userData) throw new Error("bundled smoke could not locate the CUA descriptor");
-    const persistedConnection = JSON.parse(
-      readFileSync(path.join(userData, "cua-connection.json"), "utf8"),
-    );
-    if (
-      persistedConnection.mode !== "unavailable" ||
-      persistedConnection.status !== "stopped" ||
-      persistedConnection.reasonCode !== "app-stopped"
-    ) {
-      throw new Error(
-        `packaged CUA descriptor did not record a clean shutdown: ${JSON.stringify(persistedConnection)}`,
-      );
-    }
-    const { readCuaConnection } = await import(
-      new URL("../dist-server/local-computer.js", import.meta.url)
-    );
-    if (readCuaConnection({ platform: "linux", userData }) !== null) {
-      throw new Error("packaged CUA descriptor remained usable after shutdown");
-    }
-    try {
-      process.kill(cuaRuntime.daemonPid, 0);
-      throw new Error(`packaged CUA daemon remained alive after quit: ${cuaRuntime.daemonPid}`);
-    } catch (error) {
-      if (error?.code !== "ESRCH") throw error;
-    }
-    console.log(
-      `[smoke-linux-package] OK (bundled ${path.basename(executable)}${signalShutdown ? " SIGTERM" : ""}): packaged resolver, descriptor, harness, and cleanup`,
-    );
-  } else {
-    const invocations = readFileSync(marker, "utf8")
-    .trim()
-    .split("\n")
-    .map((line) => JSON.parse(line));
-  const commands = invocations.map((entry) => entry.args.join(" "));
-  for (const expected of ["--version", "manifest", "doctor --json"]) {
-    if (!commands.some((command) => command === expected)) throw new Error(`missing CUA probe: ${expected}`);
+  if (existsSync(marker) && readFileSync(marker, "utf8").trim()) {
+    throw new Error(`ASLBot invoked a computer-use driver:\n${readFileSync(marker, "utf8")}`);
   }
-  if (invocations.some((entry) => entry.waylandEnabled !== wayland)) {
-    throw new Error("CUA Wayland opt-in escaped its certified smoke lane");
-  }
-  if (
-    invocations.some(
-      (entry) => entry.updateCheck !== "false" || entry.telemetryEnabled !== "false",
-    )
-  ) {
-    throw new Error("a CUA child escaped the local-only update/telemetry environment");
-  }
-  const daemons = invocations.filter((entry) => entry.args[0] === "serve");
-  const expectedDaemonCount = hardDeath ? 1 : 2;
-  if (daemons.length !== expectedDaemonCount) {
-    throw new Error(`expected ${expectedDaemonCount} daemon generation(s), found ${daemons.length}`);
-  }
-
-  if (hardDeath) {
-    child.kill("SIGKILL");
-    await waitForExit();
-    const cleanupDeadline = Date.now() + 10_000;
-    while (Date.now() < cleanupDeadline) {
-      const stillAlive = daemons.some((daemon) => {
-        try {
-          process.kill(daemon.pid, 0);
-          return true;
-        } catch (error) {
-          return error?.code !== "ESRCH";
-        }
-      });
-      const runtimeFilesRemain = daemons.some((daemon) => {
-        const socketIndex = daemon.args.indexOf("--socket");
-        const pidFileIndex = daemon.args.indexOf("--pid-file");
-        return (
-          (socketIndex !== -1 && existsSync(daemon.args[socketIndex + 1])) ||
-          (pidFileIndex !== -1 && existsSync(daemon.args[pidFileIndex + 1]))
-        );
-      });
-      if (!stillAlive && !runtimeFilesRemain) break;
-      await delay(50);
-    }
-    for (const daemon of daemons) {
-      try {
-        process.kill(daemon.pid, 0);
-        throw new Error(`owned CUA daemon survived hard Electron death: ${daemon.pid}`);
-      } catch (error) {
-        if (error?.code !== "ESRCH") throw error;
-      }
-    }
-    const serverDeadline = Date.now() + 10_000;
-    let staleHealth = null;
-    while (Date.now() < serverDeadline) {
-      staleHealth = await fetch(new URL("/api/health", location)).catch(() => null);
-      if (!staleHealth?.ok) break;
-      await delay(50);
-    }
-    if (staleHealth?.ok) throw new Error("embedded harness survived hard Electron death");
-    const userData = ["jlfbot", "JLFBot"]
-      .map((name) => path.join(xdgConfig, name))
-      .find((directory) => existsSync(path.join(directory, "cua-connection.json")));
-    if (!userData) throw new Error("hard-death smoke could not locate the CUA descriptor");
-    const { readCuaConnection } = await import(
-      new URL("../dist-server/local-computer.js", import.meta.url)
-    );
-    if (readCuaConnection({ platform: "linux", userData }) !== null) {
-      throw new Error("stale hard-death CUA descriptor remained usable");
-    }
-
-    let restartOutput = "";
-    let restartResult = null;
-    const restart = spawn(executable, wayland ? ["--ozone-platform=x11"] : [], {
-      cwd: root,
-      detached: true,
-      env: { ...desktopEnv, JLFBOT_SMOKE_KEEP_OPEN: "0" },
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-    try {
-      for (const stream of [restart.stdout, restart.stderr]) {
-        stream.setEncoding("utf8");
-        stream.on("data", (chunk) => {
-          restartOutput += chunk;
-          const match = restartOutput.match(/\[smoke\] renderer-ready (\{.*\})\r?\n/);
-          if (match && !restartResult) restartResult = JSON.parse(match[1]);
-        });
-      }
-      const restartDeadline = Date.now() + 30_000;
-      while (!restartResult && Date.now() < restartDeadline) {
-        if (restart.exitCode !== null || restart.signalCode !== null) {
-          throw new Error(`Electron restart exited before renderer readiness.\n${restartOutput}`);
-        }
-        await delay(100);
-      }
-      if (!restartResult?.initialCapabilities?.localComputer?.available) {
-        throw new Error(`Electron restart did not create a ready CUA generation.\n${restartOutput}`);
-      }
-      const restartExitDeadline = Date.now() + 10_000;
-      while (
-        restart.exitCode === null &&
-        restart.signalCode === null &&
-        Date.now() < restartExitDeadline
-      ) {
-        await delay(50);
-      }
-      if (restart.exitCode === null && restart.signalCode === null) {
-        throw new Error(`Electron restart did not close normally.\n${restartOutput}`);
-      }
-      if (restart.exitCode !== 0) {
-        throw new Error(
-          `Electron restart exited with ${restart.exitCode ?? restart.signalCode}.\n${restartOutput}`,
-        );
-      }
-
-      const allDaemons = readFileSync(marker, "utf8")
-        .trim()
-        .split("\n")
-        .map((line) => JSON.parse(line))
-        .filter((entry) => entry.args[0] === "serve");
-      const restartedDaemons = allDaemons;
-      if (restartedDaemons.length !== 2) {
-        throw new Error(
-          `hard-death restart expected two cumulative generations (pre-kill and restart), found ${restartedDaemons.length}`,
-        );
-      }
-      const socketPaths = new Set(
-        restartedDaemons.map((daemon) => daemon.args[daemon.args.indexOf("--socket") + 1]),
-      );
-      if (socketPaths.size !== 2) throw new Error("hard-death restart reused a stale CUA generation");
-      for (const daemon of restartedDaemons) {
-        try {
-          process.kill(daemon.pid, 0);
-          throw new Error(`CUA daemon survived restart shutdown: ${daemon.pid}`);
-        } catch (error) {
-          if (error?.code !== "ESRCH") throw error;
-        }
-        for (const flag of ["--socket", "--pid-file"]) {
-          const index = daemon.args.indexOf(flag);
-          if (index !== -1 && existsSync(daemon.args[index + 1])) {
-            throw new Error(`stale CUA runtime file survived restart: ${daemon.args[index + 1]}`);
-          }
-        }
-      }
-      if (readCuaConnection({ platform: "linux", userData }) !== null) {
-        throw new Error("CUA descriptor remained usable after restart shutdown");
-      }
-    } finally {
-      await stopDetached(restart);
-    }
-    console.log(`[smoke-linux-package] OK (${wayland ? "GNOME/Wayland" : "GNOME/X11"} hard death): restart replaced the generation and left no daemon, runtime file, server, or usable descriptor`);
-  } else {
-    await waitForExit();
-    const staleHealth = await fetch(new URL("/api/health", location)).catch(() => null);
-    if (staleHealth?.ok) throw new Error("embedded harness remained reachable after Electron quit");
-  }
-
-    for (const daemon of daemons) {
-      try {
-        process.kill(daemon.pid, 0);
-        throw new Error(`owned CUA daemon remained alive after quit: ${daemon.pid}`);
-      } catch (error) {
-        if (error?.code !== "ESRCH") throw error;
-      }
-    }
-    if (!hardDeath) {
-      console.log(`[smoke-linux-package] OK (${wayland ? "GNOME/Wayland" : "GNOME/X11"}): renderer, private CUA crash/retry, harness, and shutdown`);
-    }
-  }
+  if (signalShutdown) child.kill("SIGTERM");
+  else if (hardDeath) child.kill("SIGKILL");
+  await waitForExit();
+  const staleHealth = await fetch(new URL("/api/health", location)).catch(() => null);
+  if (staleHealth?.ok) throw new Error("embedded harness remained reachable after Electron quit");
+  console.log(`[smoke-linux-package] OK (${path.basename(executable)}): ASLBot renderer, no computer runtime, harness shutdown`);
 } finally {
   await stopProcess();
   for (const socket of brokerSockets) socket.destroy();

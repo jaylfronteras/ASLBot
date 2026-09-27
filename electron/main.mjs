@@ -6,7 +6,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { startCua, stopCua, registerCuaIpc, setCuaStateListener } from "./cua.mjs";
+import { stopCua, registerCuaIpc, setCuaStateListener } from "./cua.mjs";
 import { createAndroidDeviceController } from "./android-device.mjs";
 import { finishSpeech, startSpeech, stopSpeech } from "./speech.mjs";
 import { openBlankTerminal } from "./terminal-launch.mjs";
@@ -100,7 +100,7 @@ const DEV_URL = process.env.ELECTRON_START_URL ?? "http://127.0.0.1:5199";
 // unless JLFBOT_COMPOSIO_BROKER_URL points at a broker you deployed yourself
 // (see cloudflare/composio-broker/README.md).
 const DEFAULT_COMPOSIO_BROKER_URL = "";
-let SERVER_PORT = 8799;
+let SERVER_PORT = 8899;
 const APP_ICON = path.join(__dirname, "resources/app-icon.png");
 let desktopViewerWindow = null;
 let desktopViewerOwner = null;
@@ -335,7 +335,7 @@ function desktopDataDir() {
   // then pass this exact resolved path to the utility child. server/config.ts
   // intentionally treats an empty JLFBOT_DATA_DIR differently, so inheriting it
   // without normalization would lease one directory and write another.
-  return process.env.JLFBOT_DATA_DIR || defaultDataDir(app.getPath("home"));
+  return process.env.ASLBOT_DATA_DIR || process.env.JLFBOT_DATA_DIR || defaultDataDir(app.getPath("home"));
 }
 
 async function stopUtilityServer(proc, timeoutMs = UTILITY_SERVER_STOP_TIMEOUT_MS) {
@@ -1340,7 +1340,7 @@ async function startServerPackaged() {
   // server during teardown — one settle-and-retry covers it
   let everyPortForeignOwned = true;
   for (let attempt = 0; attempt < 2; attempt++) {
-    for (const port of [8799, 18799, 28799]) {
+    for (const port of [8899, 18899, 28899]) {
       if (desktopShutdownStarted) return false;
       const started = await startServerOn(port);
       if (started.proc) {
@@ -1383,7 +1383,7 @@ function buildErrorPage({ allPortsOccupied }) {
   const serverLogPath = path.join(LOG_DIR, "server.log");
   const serverLogHref = pathToFileURL(serverLogPath).href;
   const reason = allPortsOccupied
-    ? "Every JLFBot port answered health checks from another process — likely a second copy of the app, or another program on ports 8799–28799. Quit that program, then quit and reopen JLFBot."
+    ? "Every ASLBot port answered health checks from another process — likely a second copy of the app, or another program on ports 8899–28899. Quit that program, then quit and reopen ASLBot."
     : "The background server didn't come up in time — this is usually slow startup, not a port conflict. Quit and reopen JLFBot.";
   return (
     "data:text/html;charset=utf-8," +
@@ -2890,16 +2890,8 @@ app.whenReady().then(async () => {
   registerCuaIpc();
   androidDevice.registerIpc(ipcMain);
   registerUpdaterIpc();
-  // Start the CUA daemon before the window so the harness can pick up the
-  // connection descriptor on first render. Never blocks window creation on
-  // failure — computer use degrades to "unavailable", the rest still works.
-  cuaReady =
-    !desktopRemoteAccess && (process.platform === "darwin" || process.platform === "linux" || process.platform === "win32")
-      ? startCua().catch((e) => {
-          console.error("[cua] start failed:", e);
-          return { mode: "unavailable", reason: String(e) };
-        })
-      : Promise.resolve({ mode: "unavailable", reason: "unsupported-platform" });
+  // ASLBot does not ship computer use. The daemon is never started.
+  cuaReady = Promise.resolve({ mode: "unavailable", reason: "removed" });
   if (desktopRemoteAccess) {
     try {
       desktopCompanionRelay = await startDesktopCompanionRelay({

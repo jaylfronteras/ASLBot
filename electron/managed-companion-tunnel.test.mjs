@@ -67,7 +67,7 @@ function fakeChild(pid = 4242) {
 function healthyResponse() {
   return {
     ok: true,
-    text: async () => JSON.stringify({ app: "jlfbot" }),
+    text: async () => JSON.stringify({ app: "aslbot" }),
   };
 }
 

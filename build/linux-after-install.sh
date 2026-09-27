@@ -24,7 +24,7 @@ if [ -n "${JLFBOT_POSTINSTALL_TEST_ROOT:-}" ]; then
   APPARMOR_STATUS=$APP_ROOT/test-system/apparmor_status
   USERNS_RESTRICTION=$APP_ROOT/test-system/apparmor_restrict_unprivileged_userns
 else
-  APP_ROOT=/opt/JLFBot
+  APP_ROOT=/opt/ASLBot
   EXPECTED_OWNER=root:root
   TEST_MODE=0
   APPARMOR_DIR=/etc/apparmor.d
@@ -170,12 +170,8 @@ install_browser_apparmor_profile() {
   "$APPARMOR_PARSER" -r "$target"
 }
 
-CUA_ROOT=$APP_ROOT/resources/cua-linux-x64
 repair_directory "$APP_ROOT"
 repair_directory "$APP_ROOT/resources"
-repair_directory "$CUA_ROOT"
-repair_executable "$CUA_ROOT/cua-driver"
-repair_executable "$CUA_ROOT/cua-cursor-theme"
 repair_chromium_sandbox "$APP_ROOT/chrome-sandbox"
 BROWSER_ROOT=$APP_ROOT/resources/browser-engine
 repair_directory "$BROWSER_ROOT"

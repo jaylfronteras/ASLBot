@@ -1509,6 +1509,8 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
   const [roomMenu, setRoomMenu] = useState<{ groupId: string; x: number; y: number } | null>(null);
   const [roomSectionPicker, setRoomSectionPicker] = useState<{ groupId: string; x: number; y: number } | null>(null);
   const [plusOpen, setPlusOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [pickerQuery, setPickerQuery] = useState("");
   const [attentionOpen, setAttentionOpen] = useState(false);
   const [attentionPinned, setAttentionPinnedState] = useState(() => loadSidebarAttentionPinned());
   const setAttentionPinned = (pinned: boolean) => {
@@ -1826,6 +1828,77 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
           className={cn("relative flex items-center", density === "icons" ? "flex-col gap-1" : "gap-1")}
           style={windowNoDragStyle}
         >
+          {simpleMode ? (
+            <>
+              <button
+                type="button"
+                onClick={() => setSearchOpen((open) => !open)}
+                aria-label={t("sidebar.searchAria")}
+                aria-pressed={searchOpen}
+                className="flex size-10 items-center justify-center rounded-md text-ink-secondary hover:bg-raised hover:text-ink"
+                title={t("sidebar.search")}
+              >
+                <Search size={18} />
+              </button>
+              <button
+                type="button"
+                onClick={() => { setPlusOpen((open) => !open); setPickerQuery(""); }}
+                aria-label="Create or open a bot"
+                aria-expanded={plusOpen}
+                className="flex size-10 items-center justify-center rounded-md text-ink-secondary hover:bg-raised hover:text-ink"
+                title="Create or open a bot"
+              >
+                <Plus size={20} strokeWidth={2} />
+              </button>
+              {plusOpen && (
+                <>
+                  <div className="fixed inset-0 z-30" onMouseDown={() => setPlusOpen(false)} />
+                  <div className="absolute right-0 top-full z-40 mt-1 w-72 overflow-hidden rounded-xl border border-hairline/50 bg-menu shadow-2xl shadow-black/60">
+                    <div className="border-b border-hairline/40 px-3 py-2">
+                      <input
+                        autoFocus
+                        value={pickerQuery}
+                        onChange={(event) => setPickerQuery(event.target.value)}
+                        placeholder="To: Search or create Bots"
+                        aria-label="To: Search or create Bots"
+                        className="w-full bg-transparent text-[13px] text-ink placeholder:text-ink-secondary focus:outline-none"
+                      />
+                    </div>
+                    <div className="max-h-80 overflow-y-auto py-1.5">
+                      <button
+                        type="button"
+                        onClick={() => { setPlusOpen(false); dispatch({ type: "toggleNewBot", open: true }); }}
+                        className="flex w-full items-center gap-3 px-3.5 py-2 text-left text-[14px] text-ink hover:bg-raised/70"
+                      >
+                        <Plus size={16} className="text-ink-secondary" />
+                        Create new Bot
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setPlusOpen(false); setNewRoom(true); }}
+                        className="flex w-full items-center gap-3 px-3.5 py-2 text-left text-[14px] text-ink hover:bg-raised/70"
+                      >
+                        <Users size={16} className="text-ink-secondary" />
+                        Create group chat
+                      </button>
+                      {state.bots.filter((bot) => !bot.hidden && (!pickerQuery.trim() || bot.name.toLowerCase().includes(pickerQuery.trim().toLowerCase()))).map((bot) => (
+                        <button
+                          key={bot.id}
+                          type="button"
+                          onClick={() => { setPlusOpen(false); dispatch({ type: "select", id: bot.id }); }}
+                          className="flex w-full items-center gap-3 px-3.5 py-2 text-left text-[14px] text-ink hover:bg-raised/70"
+                        >
+                          <span className="flex size-6 items-center justify-center rounded-full bg-accent/20 text-[11px] font-semibold text-accent">{bot.name.slice(0, 1)}</span>
+                          <span className="min-w-0 flex-1 truncate">{bot.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </>
+          ) : (
+          <>
           <button
             type="button"
             onClick={toggleCollapsed}
@@ -1992,13 +2065,15 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
               </div>
             </>
           )}
+          </>
+          )}
         </div>
       </div>
 
-      <DesktopWorkspaceSwitcher compact={density === "icons"} />
-      <OrganizationIdentity compact={density === "icons"} />
+      {!simpleMode && <DesktopWorkspaceSwitcher compact={density === "icons"} />}
+      {!simpleMode && <OrganizationIdentity compact={density === "icons"} />}
       {/* Search */}
-      <div className={cn("pt-1 pb-3", density === "icons" ? "hidden" : "px-3")}>
+      {(!simpleMode || searchOpen) && <div className={cn("pt-1 pb-3", density === "icons" ? "hidden" : "px-3")}>
         <div className="flex items-center gap-2 rounded-md border border-hairline/40 bg-inset/40 px-2.5 py-1.5 focus-within:border-accent/50">
           <Search size={14} className="text-ink-secondary" />
           <input
@@ -2010,7 +2085,7 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
             className="w-full bg-transparent text-[12.5px] text-ink placeholder:text-ink-secondary focus:outline-none"
           />
         </div>
-      </div>
+      </div>}
 
       {attentionPinned && density !== "icons" && !simpleMode && (
         <SidebarAttentionPanel

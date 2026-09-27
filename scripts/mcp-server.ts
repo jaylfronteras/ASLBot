@@ -91,7 +91,7 @@ export async function probeBaseUrls(candidates: string[]): Promise<string> {
       const health = await fetchJson(`${candidate}/api/health`, {
         signal: AbortSignal.timeout(Math.min(requestTimeoutMs(), 2_000)),
       });
-      if (health?.app !== "jlfbot") {
+      if (health?.app !== "aslbot") {
         failures.push(`${candidate} answered, but it was not JLFBot`);
         continue;
       }
@@ -795,11 +795,11 @@ export async function handleToolCall(
   switch (name) {
     case "get_system_health": {
       const res = await fetcher("/api/health");
-      if (res?.app !== "jlfbot") throw new Error("The configured endpoint is not an JLFBot server");
+      if (res?.app !== "aslbot") throw new Error("The configured endpoint is not an ASLBot server");
       return {
         status: "connected",
         endpoint: discoveredBaseUrl ?? JLFBOT_BASE_URL,
-        app: "jlfbot",
+        app: "aslbot",
         packaged: Boolean(res.static),
       };
     }

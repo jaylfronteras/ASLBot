@@ -17,11 +17,11 @@ const candidate = path.resolve(process.argv[2] ?? "");
 if (!candidate.endsWith(".deb") || !fs.existsSync(candidate)) fail("pass the newly built DEB path");
 
 try {
-  const status = execFileSync("dpkg-query", ["-W", "-f=${db:Status-Abbrev}", "jlfbot"], {
+  const status = execFileSync("dpkg-query", ["-W", "-f=${db:Status-Abbrev}", "aslbot"], {
     encoding: "utf8",
     stdio: ["ignore", "pipe", "ignore"],
   }).trim();
-  if (status.startsWith("ii")) fail("refusing to replace a pre-existing JLFBot installation");
+  if (status.startsWith("ii")) fail("refusing to replace a pre-existing ASLBot installation");
 } catch (error) {
   if (String(error?.message ?? error).includes("refusing to replace")) throw error;
 }
@@ -30,9 +30,9 @@ const temporary = fs.mkdtempSync(path.join(path.resolve(runnerTemp), "jlfbot-deb
 if (path.dirname(temporary) !== path.resolve(runnerTemp)) fail("temporary fixture escaped RUNNER_TEMP");
 const legacyRoot = path.join(temporary, "legacy-package");
 const controlRoot = path.join(legacyRoot, "DEBIAN");
-const legacyApp = path.join(legacyRoot, "opt", "JLFBot");
+const legacyApp = path.join(legacyRoot, "opt", "ASLBot");
 const legacyResources = path.join(legacyApp, "resources");
-const legacyDeb = path.join(temporary, "jlfbot_0.1.7_amd64.deb");
+const legacyDeb = path.join(temporary, "aslbot_0.1.7_amd64.deb");
 
 try {
   fs.mkdirSync(controlRoot, { recursive: true, mode: 0o755 });
@@ -42,11 +42,11 @@ try {
   fs.writeFileSync(
     path.join(controlRoot, "control"),
     [
-      "Package: jlfbot",
+      "Package: aslbot",
       "Version: 0.1.7",
       "Architecture: amd64",
-      "Maintainer: JLFBot CI <ci@jlfbot.invalid>",
-      "Description: Legacy JLFBot directory-mode upgrade fixture",
+      "Maintainer: ASLBot CI <ci@aslbot.invalid>",
+      "Description: Legacy ASLBot directory-mode upgrade fixture",
       "",
     ].join("\n"),
     { mode: 0o644 },
@@ -57,7 +57,7 @@ try {
     stdio: "inherit",
   });
   execFileSync("dpkg", ["--install", legacyDeb], { stdio: "inherit" });
-  for (const directory of ["/opt/JLFBot", "/opt/JLFBot/resources"]) {
+  for (const directory of ["/opt/ASLBot", "/opt/ASLBot/resources"]) {
     const mode = fs.lstatSync(directory).mode & 0o777;
     if (mode !== 0o775) fail(`legacy fixture did not reproduce 0775 at ${directory}`);
   }
@@ -70,9 +70,8 @@ try {
     stdio: "inherit",
   });
   for (const directory of [
-    "/opt/JLFBot",
-    "/opt/JLFBot/resources",
-    "/opt/JLFBot/resources/cua-linux-x64",
+    "/opt/ASLBot",
+    "/opt/ASLBot/resources",
   ]) {
     const details = fs.lstatSync(directory);
     if (!details.isDirectory() || details.isSymbolicLink()) fail(`unsafe upgraded directory: ${directory}`);
@@ -80,15 +79,7 @@ try {
       fail(`upgraded directory is not root:root 0755: ${directory}`);
     }
   }
-  for (const executable of ["cua-driver", "cua-cursor-theme"]) {
-    const file = path.join("/opt/JLFBot/resources/cua-linux-x64", executable);
-    const details = fs.lstatSync(file);
-    if (!details.isFile() || details.isSymbolicLink()) fail(`unsafe upgraded executable: ${file}`);
-    if (details.uid !== 0 || details.gid !== 0 || (details.mode & 0o777) !== 0o755) {
-      fail(`upgraded executable is not root:root 0755: ${file}`);
-    }
-  }
-  const chromiumSandbox = "/opt/JLFBot/chrome-sandbox";
+  const chromiumSandbox = "/opt/ASLBot/chrome-sandbox";
   const sandboxDetails = fs.lstatSync(chromiumSandbox);
   if (!sandboxDetails.isFile() || sandboxDetails.isSymbolicLink()) {
     fail(`unsafe upgraded Chromium sandbox: ${chromiumSandbox}`);
@@ -100,7 +91,7 @@ try {
   ) {
     fail(`upgraded Chromium sandbox is not root:root 4755: ${chromiumSandbox}`);
   }
-  const installedVersion = execFileSync("dpkg-query", ["-W", "-f=${Version}", "jlfbot"], {
+  const installedVersion = execFileSync("dpkg-query", ["-W", "-f=${Version}", "aslbot"], {
     encoding: "utf8",
   }).trim();
   console.log(

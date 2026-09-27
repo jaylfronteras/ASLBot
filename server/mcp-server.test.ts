@@ -748,7 +748,7 @@ describe("connection security and discovery", () => {
   it("skips a foreign process and discovers the real fallback port", async () => {
     globalThis.fetch = vi.fn(async (url: any) => {
       if (String(url).includes(":8799")) return jsonResponse({ app: "not-jlfbot" });
-      if (String(url).includes(":18799")) return jsonResponse({ app: "jlfbot" });
+      if (String(url).includes(":18799")) return jsonResponse({ app: "aslbot" });
       throw new Error("unexpected port");
     }) as any;
     await expect(probeBaseUrls(["http://127.0.0.1:8799", "http://127.0.0.1:18799"])).resolves.toBe("http://127.0.0.1:18799");

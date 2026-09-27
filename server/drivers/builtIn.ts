@@ -1,5 +1,6 @@
-// Built-in driver registration — upstream builtInDrivers.ts: a static
-// array, nothing more. Adding a driver = write drivers/<x>.ts, append.
+// Driver classes stay registered so existing harness tests and a hand-edited
+// config can still load them. ASLBot does not auto-add them, and Settings
+// only creates OpenAI-compatible providers.
 import type { AnyProviderDriver } from "../contracts.ts";
 import { AntigravityDriver } from "./antigravity.ts";
 import { BoxAgentDriver } from "./boxagent.ts";
