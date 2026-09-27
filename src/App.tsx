@@ -262,9 +262,9 @@ function Shell() {
           ? <RemoteAgentSettingsPanel bot={bot} />
           : state.botSettingsSection === "routines"
             ? <SimpleRoutinesPanel key={`routines:${bot.id}`} bot={bot} />
-            : state.botSettingsSection === "conversations" || state.botSettingsSection === "history"
-              ? <BotSettingsDialog key={`settings:${bot.id}`} bot={bot} />
-              : <SimpleBotPanel key={`simple:${bot.id}`} bot={bot} />
+            : state.botSettingsSection === "overview"
+              ? <SimpleBotPanel key={`simple:${bot.id}`} bot={bot} />
+              : <BotSettingsDialog key={`settings:${bot.id}`} bot={bot} />
       )}
       {!remoteClient && state.inspectorOpen && bot && <InspectorPanel key={bot.threadId} bot={bot} />}
       {state.appSettingsOpen && <SettingsModal />}

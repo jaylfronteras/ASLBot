@@ -195,7 +195,9 @@ const desktopEnv = {
   CUA_DRIVER_PATH: sentinel,
   JLFBOT_COMPOSIO_BROKER_URL: `http://127.0.0.1:${brokerAddress.port}`,
   JLFBOT_SMOKE_TEST: "1",
-  JLFBOT_SMOKE_CUA: hardDeath || bundled || sessionBlocked ? "0" : "1",
+  // Computer use is not part of ASLBot, so the crash-retry lane must not wait
+  // for a CUA daemon that this package never starts.
+  JLFBOT_SMOKE_CUA: "0",
   JLFBOT_SMOKE_BUNDLED_CUA: bundled ? "1" : "0",
 };
 if (hardDeath || signalShutdown) desktopEnv.JLFBOT_SMOKE_KEEP_OPEN = "1";

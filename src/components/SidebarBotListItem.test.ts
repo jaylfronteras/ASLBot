@@ -38,19 +38,13 @@ function renderRow(candidate: Bot) {
 }
 
 describe("BotListItem", () => {
-  it("offers a direct New folder button and keyboard-accessible bot menu independently of New thread", () => {
-    const markup = renderRow(bot());
-    expect(markup).toContain('aria-label="New folder under Atlas"');
-    expect(markup).toContain('aria-label="Actions for Atlas"');
-    expect(markup).toContain('aria-haspopup="menu"');
-  });
-  it("keeps the native thread toggle beside, not inside, the selectable bot row", () => {
+  it("keeps the bot menu on the row without a thread list or folder control", () => {
     const markup = renderRow(bot());
     expect(markup).toContain('role="button" tabindex="0"');
-    expect(markup).toContain('</div><button type="button" aria-label="Expand Atlas threads" aria-expanded="false"');
-    const toggle = markup.match(/<button[^>]*aria-label="Expand Atlas threads"[^>]*>/)?.[0];
-    expect(toggle).toContain("focus-visible:ring-1");
-    expect(toggle).not.toContain("hover:bg-");
+    expect(markup).toContain('aria-label="Actions for Atlas"');
+    expect(markup).toContain('aria-haspopup="menu"');
+    expect(markup).not.toContain('aria-label="New folder under Atlas"');
+    expect(markup).not.toContain("Expand Atlas threads");
   });
 
   // Phase 0 writes a digest row after every turn, so the last row of an idle

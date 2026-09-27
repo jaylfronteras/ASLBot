@@ -126,7 +126,7 @@ posixOnly("who may answer a card on a shared workspace", () => {
   beforeAll(async () => {
     chmodSync(FAKE_CLI, 0o755);
     home = mkdtempSync(join(tmpdir(), "jlfbot-card-answerers-"));
-    const data = join(home, ".jlfbot");
+    const data = join(home, ".aslbot");
     mkdirSync(data, { recursive: true });
     writeFileSync(join(data, "config.json"), JSON.stringify({
       signIn: { admins: [BOSS], members: [ADA, BOB] },

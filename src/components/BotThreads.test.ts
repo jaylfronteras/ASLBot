@@ -38,12 +38,10 @@ describe("sidebar bot threads", () => {
     expect(markup).not.toContain("test");
   });
 
-  it("keeps All threads accessible even with one thread so its history actions remain reachable", () => {
+  it("hides the header thread picker; earlier conversations open from History", () => {
     const render = (candidate: Bot) => renderToStaticMarkup(createElement(StoreProvider, null, createElement(TaskPicker, { bot: candidate })));
-    expect(render(bot)).toContain('aria-label="All threads"');
-    const single = render({ ...bot, tasks: [bot.tasks![1]!] });
-    expect(single).toContain("All threads");
-    expect(single).not.toContain('disabled=""');
+    expect(render(bot)).toBe("");
+    expect(render({ ...bot, tasks: [bot.tasks![1]!] })).toBe("");
   });
 
   it("groups folder threads under one bot while keeping loose threads and empty folders reachable", () => {
@@ -102,8 +100,7 @@ describe("sidebar bot threads", () => {
     expect(markup).toContain("New thread");
     expect(markup).not.toContain('disabled=""');
     const picker = renderToStaticMarkup(createElement(StoreProvider, null, createElement(GroupTaskPicker, { group })));
-    expect(picker).toContain('aria-label="All threads"');
-    expect(picker).not.toContain("Tasks");
+    expect(picker).toBe("");
     const working = renderToStaticMarkup(createElement(StoreProvider, null, createElement(GroupThreadList, { group: { ...group, working: true }, selected: true })));
     expect(working).toContain(`title="Launch plan · ${formatUpdatedAt(3)} · Working"`);
     expect(working).toContain('disabled=""');

@@ -162,7 +162,7 @@ describe("legacy routine comms e2e (fake ACP fleet)", () => {
     }
     const antigravityProfile = join(
       home,
-      ".jlfbot",
+      ".aslbot",
       "providers",
       "antigravity",
       createHash("sha256").update("geminiAsker").digest("hex"),
@@ -170,9 +170,9 @@ describe("legacy routine comms e2e (fake ACP fleet)", () => {
     );
     mkdirSync(antigravityProfile, { recursive: true });
     writeFileSync(join(antigravityProfile, "acp_token.json"), "{}\n");
-    mkdirSync(join(home, ".jlfbot"), { recursive: true });
+    mkdirSync(join(home, ".aslbot"), { recursive: true });
     writeFileSync(
-      join(home, ".jlfbot", "config.json"),
+      join(home, ".aslbot", "config.json"),
       JSON.stringify({
         instances: {
           // the ask-peer fleet: both bots run "ask-peer" so A can ask B

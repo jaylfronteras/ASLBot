@@ -73,7 +73,7 @@ posixOnly("work digest e2e (every fake engine)", () => {
   beforeAll(async () => {
     for (const e of ENGINES) chmodSync(fake(e.cli), 0o755);
     home = mkdtempSync(join(tmpdir(), "jlfbot-digest-e2e-"));
-    mkdirSync(join(home, ".jlfbot"), { recursive: true });
+    mkdirSync(join(home, ".aslbot"), { recursive: true });
     const instances: Record<string, unknown> = {};
     for (const e of ENGINES) {
       instances[e.id] = { driver: e.driver, environment: e.env, config: { cli: fake(e.cli), fullAuto: true } };
@@ -90,7 +90,7 @@ posixOnly("work digest e2e (every fake engine)", () => {
       environment: { FAKE_ACP_MODE: "echo-gated" },
       config: { cli: fake("fake-acp-cli.ts"), fullAuto: true },
     };
-    writeFileSync(join(home, ".jlfbot", "config.json"), JSON.stringify({ instances }));
+    writeFileSync(join(home, ".aslbot", "config.json"), JSON.stringify({ instances }));
 
     const env: NodeJS.ProcessEnv = { HOME: home, USERPROFILE: home, JLFBOT_PORT: String(PORT) };
     if (process.env.PATH) env.PATH = process.env.PATH;

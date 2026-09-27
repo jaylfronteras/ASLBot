@@ -113,18 +113,6 @@ function elapsedSeconds(text: string): number {
   return -1;
 }
 
-/** Selection can already expand a thread list. Click only its collapsed DOM
- * chevron, avoiding both accidental collapse and transient duplicate AX names. */
-async function expandThreads(handle: string, name: string): Promise<void> {
-  const collapsed = JSON.stringify(`button[aria-label="Expand ${name} threads"]`);
-  const expanded = JSON.stringify(`button[aria-label="Collapse ${name} threads"]`);
-  await waitUntil(async () => (await ui("eval", handle, "--js", `(() => {
-    if (document.querySelector(${expanded})) return true;
-    document.querySelector(${collapsed})?.click();
-    return false;
-  })()`)).result, 10_000, `${name}'s thread list to expand`);
-}
-
 /** Poll a probe until it returns a truthy value; fail with the last result. */
 async function waitUntil<T>(probe: () => Promise<T>, timeoutMs: number, what: string): Promise<T> {
   const deadline = Date.now() + timeoutMs;
@@ -168,8 +156,24 @@ describe("the thinking timer stays anchored across a thread switch", () => {
     const api = fixtureApi(info.url);
     const evaluate = async (js: string) => (await ui("eval", info.ui, "--js", js)).result;
     const timerText = () => evaluate(`document.querySelector('.turn-presence .tabular-nums')?.textContent ?? null`);
-    const selectThread = (threadId: string) => evaluate(`document.querySelector('[data-sidebar-thread-row="${threadId}"]')?.click(); true`);
-    const isCurrent = (threadId: string) => evaluate(`Boolean(document.querySelector('[data-sidebar-thread-row="${threadId}"][aria-current="page"]'))`);
+    // Simple mode hides sidebar thread rows. History is the way back to an
+    // older conversation; the server's active thread id is the source of truth.
+    const selectThread = async (threadId: string) => {
+      await ui("click", info.ui, "--name", "Earlier conversations with Pepper");
+      const outcome = await waitUntil(async () => {
+        const result = (await ui("eval", info.ui, "--js", `(() => {
+          const row = document.querySelector('[data-conversation-thread="${threadId}"]');
+          if (!row) return "";
+          if (row.getAttribute("aria-current") === "true") return "current";
+          row.click();
+          return "opened";
+        })()`)).result;
+        return result || null;
+      }, 10_000, "the conversation in History");
+      if (outcome === "current") await ui("press", info.ui, "--keys", "Escape");
+    };
+    const isCurrent = async (threadId: string) =>
+      (await api("GET", "/api/bots")).bots.find((bot: any) => bot.id === info.botId).threadId === threadId;
     const taskOf = async (threadId: string) =>
       (await api("GET", "/api/bots")).bots.find((bot: any) => bot.id === info.botId).tasks.find((task: any) => task.threadId === threadId);
 
@@ -177,9 +181,6 @@ describe("the thinking timer stays anchored across a thread switch", () => {
     // POST the sidebar's "New thread" menu item dispatches.
     const busyThread = (await api("GET", "/api/bots")).bots.find((bot: any) => bot.id === info.botId).threadId;
     const otherThread = (await api("POST", `/api/bots/${info.botId}/tasks`, {})).task.threadId;
-    // Expand Pepper's thread list if selection has not already opened it.
-    await expandThreads(info.ui, "Pepper");
-    await waitUntil(() => evaluate(`Boolean(document.querySelector('[data-sidebar-thread-row="${otherThread}"]'))`), 10_000, "the new thread's sidebar row to appear");
     // Creating a thread selects it on the server. Pin the original thread in
     // the renderer before sending the turn whose stamp this case observes.
     await selectThread(busyThread);
@@ -240,13 +241,10 @@ describe("the thinking timer stays anchored across a thread switch", () => {
     const api = fixtureApi(info.url);
     const evaluate = async (js: string) => (await ui("eval", info.ui, "--js", js)).result;
     const timerText = () => evaluate(`document.querySelector('.turn-presence .tabular-nums')?.textContent ?? null`);
-    const selectThread = (threadId: string) => evaluate(`document.querySelector('[data-sidebar-thread-row="${threadId}"]')?.click(); true`);
-    const isCurrent = (threadId: string) => evaluate(`Boolean(document.querySelector('[data-sidebar-thread-row="${threadId}"][aria-current="page"]'))`);
+    const showing = (label: string) => evaluate(`document.querySelector("textarea")?.getAttribute("aria-label") === ${JSON.stringify(label)}`);
     const botsState = () => api("GET", "/api/bots");
     const groupState = async () => (await botsState()).groups.find((row: any) => row.id === groupId);
 
-    // Pepper's own 1:1 thread is the away destination.
-    const soloThread = (await botsState()).bots.find((bot: any) => bot.id === info.botId).threadId;
     // A one-member group with setup completed at creation, so the composer is
     // live at once and plain messages route to Pepper, the default responder,
     // whose engine is the same hang-mode fake.
@@ -256,13 +254,12 @@ describe("the thinking timer stays anchored across a thread switch", () => {
       setup: { bulletin: "", defaultResponder: { kind: "member", botId: info.botId } },
     })).group;
     const groupId = group.id;
+    const selectGroup = () => evaluate(`document.querySelector('[data-sidebar-room-row="${groupId}"]')?.click(); true`);
+    const selectBot = () => evaluate(`document.querySelector('[data-sidebar-bot-row="${info.botId}"]')?.click(); true`);
 
-    // Ensure both lists are open, regardless of the current selection.
-    await expandThreads(info.ui, "Pepper");
-    await expandThreads(info.ui, "Timer group");
-    await waitUntil(() => evaluate(`Boolean(document.querySelector('[data-sidebar-thread-row="${group.threadId}"]'))`), 10_000, "the group's sidebar thread row to appear");
-    await selectThread(group.threadId);
-    await waitUntil(() => isCurrent(group.threadId), 10_000, "the group to become current");
+    await waitUntil(() => evaluate(`Boolean(document.querySelector('[data-sidebar-room-row="${groupId}"]'))`), 10_000, "the group row to appear");
+    await selectGroup();
+    await waitUntil(() => showing("Message Timer group"), 10_000, "the group to become current");
 
     // The group's composer sends; the hang-mode engine holds the member's turn.
     await ui("type", info.ui, "--name", "Message Timer group", "--text", "hello group");
@@ -285,12 +282,12 @@ describe("the thinking timer stays anchored across a thread switch", () => {
     const beforeSwitch = await timerText();
     expect(elapsedSeconds(beforeSwitch)).toBeGreaterThanOrEqual(Math.floor((Date.now() - stamp) / 1000) - 2);
 
-    // Switch to Pepper's 1:1 thread, dwell, and come back to the group.
-    await selectThread(soloThread);
-    await waitUntil(() => isCurrent(soloThread), 10_000, "the 1:1 thread to become current");
+    // Switch to Pepper's 1:1 chat, dwell, and come back to the group.
+    await selectBot();
+    await waitUntil(() => showing("Message Pepper"), 10_000, "the 1:1 thread to become current");
     await new Promise((done) => setTimeout(done, 3_000));
-    await selectThread(group.threadId);
-    await waitUntil(() => isCurrent(group.threadId), 10_000, "the group to become current again");
+    await selectGroup();
+    await waitUntil(() => showing("Message Timer group"), 10_000, "the group to become current again");
 
     // The readout resumes from the claim — a restart would show single
     // digits after a 13+ second turn.
