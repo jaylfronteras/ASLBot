@@ -22,9 +22,23 @@ describe("routine delegation through the isolated harness", () => {
   const control = (args: string[]) => runControlOmb([...args, "--url", fixture.info.url]);
   const file = (threadId: string, extension: string) => join(fixture.info.dataDir, `${threadId}.${extension}`);
   const finish = (threadId: string) => writeFileSync(file(threadId, "gate"), "finish isolated turn");
+  // The fake CLI writes its dump with a plain writeFileSync from another
+  // process, so on Windows the file can exist while still half-written
+  // ("Unexpected end of JSON input"). Poll until it parses as a complete
+  // document, not merely until it exists.
+  const readDump = (threadId: string): { value: any } | undefined => {
+    const path = file(threadId, "json");
+    if (!existsSync(path)) return undefined;
+    try {
+      return { value: JSON.parse(readFileSync(path, "utf8")) };
+    } catch {
+      return undefined;
+    }
+  };
   const dump = async (threadId: string) => {
-    await expect.poll(() => existsSync(file(threadId, "json")), { timeout: 15_000 }).toBe(true);
-    return JSON.parse(readFileSync(file(threadId, "json"), "utf8"));
+    let parsed: { value: any } | undefined;
+    await expect.poll(() => (parsed = readDump(threadId)) !== undefined, { timeout: 15_000 }).toBe(true);
+    return parsed!.value;
   };
   const runState = async (id: string) => (await api("GET", "/api/routines")).runs.find((run: any) => run.id === id);
   const messages = async (threadId: string) => (await api("GET", `/api/threads/${threadId}/messages?limit=100`)).messages as any[];
