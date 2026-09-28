@@ -38,6 +38,7 @@ final class ThreadNavigationUITests: XCTestCase {
         topBarThreads.tap()
         let iCloud = app.buttons["thread-preview-icloud"]
         XCTAssertTrue(iCloud.waitForExistence(timeout: 5))
+        assertHittable(iCloud)
         recordScreenshot("Top bar opens the thread picker", in: app)
         iCloud.tap()
         assertThread("Triage iCloud", in: app)
@@ -46,6 +47,9 @@ final class ThreadNavigationUITests: XCTestCase {
         app.buttons["thread-switcher"].tap()
         let weekend = app.buttons["thread-preview-weekend"]
         XCTAssertTrue(weekend.waitForExistence(timeout: 5))
+        // The picker row can exist while its presentation is still animating;
+        // a tap synthesized then may land before the row accepts it.
+        assertHittable(weekend)
         weekend.tap()
         assertThread("Plan weekend", in: app)
         XCTAssertFalse(transcriptContains("I am reviewing iCloud here", in: app))
@@ -278,6 +282,7 @@ final class ThreadNavigationUITests: XCTestCase {
         app.buttons["thread-switcher"].tap()
         let row = app.buttons["thread-\(id)"]
         XCTAssertTrue(row.waitForExistence(timeout: 5))
+        assertHittable(row)
         row.tap()
         assertThread(title, in: app)
     }
@@ -288,8 +293,22 @@ final class ThreadNavigationUITests: XCTestCase {
         let expected = NSPredicate(format: "label == %@", "Switch thread: \(title)")
         let appeared = XCTNSPredicateExpectation(predicate: expected, object: header)
         // Thread headers settle late on a loaded CI runner; 5s timed out on
-        // PRs 1576 and 1615 while the switch itself was correct.
-        XCTAssertEqual(XCTWaiter.wait(for: [appeared], timeout: 10), .completed)
+        // PRs 1576 and 1615 while the switch itself was correct, and 10s timed
+        // out on the iPad simulator in main run 36383705578, where a single
+        // query for the header took ~9s. Match the 30s headroom used for the
+        // initial open; the expected label is still asserted exactly.
+        XCTAssertEqual(
+            XCTWaiter.wait(for: [appeared], timeout: 30), .completed,
+            "thread-switcher label is \"\(header.exists ? header.label : "<missing>")\", expected \"Switch thread: \(title)\""
+        )
+    }
+
+    @MainActor
+    private func assertHittable(_ element: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {
+        let expectation = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "hittable == true"), object: element
+        )
+        XCTAssertEqual(XCTWaiter.wait(for: [expectation], timeout: 15), .completed, file: file, line: line)
     }
 
     @MainActor
