@@ -1,7 +1,7 @@
 {
   "name": "aslbot",
   "private": true,
-  "version": "0.1.86",
+  "version": "0.1.0",
   "description": "A lite multi-bot team app that talks to OpenAI-compatible models.",
   "homepage": "https://github.com/jaylfronteras/ASLBot",
   "repository": {

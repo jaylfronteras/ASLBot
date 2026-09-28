@@ -234,7 +234,14 @@ describe("control-jlfbot ui drives the real renderer", () => {
     await expect.poll(async () => (await ui("eval", info.ui, "--js", "document.querySelector('textarea')?.getAttribute('aria-label') ?? ''")).result,
       { timeout: 15_000 }).toBe("Message Pepper");
 
-    const before = await ui("snapshot", info.ui, "--interactive");
+    // The accessibility snapshot can lag the DOM check above by a frame on a
+    // loaded runner (PR #4 CI saw no textbox ref once), so poll until the
+    // composer is in the snapshot; the exact-one assertions below still hold.
+    let before: any = undefined;
+    await expect.poll(async () => {
+      before = await ui("snapshot", info.ui, "--interactive");
+      return before.ok === true && refsNamed(before, "Message Pepper", "textbox").length > 0;
+    }, { timeout: 15_000 }).toBe(true);
     expect(before.ok).toBe(true);
     const [composer, ...moreComposers] = refsNamed(before, "Message Pepper", "textbox");
     expect(composer).toMatch(/^@e\d+$/);

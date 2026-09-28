@@ -9,6 +9,7 @@ import { afterAll, beforeAll, expect, it, vi } from "vitest";
 import { launchVerificationServer, type VerificationServer } from "../scripts/control-jlfbot.ts";
 import { createComputerSharing, type SharedFolder } from "../electron/computer-sharing.mjs";
 import { sessionCookieName } from "./request-auth.ts";
+import { readCompleteJson } from "./testing/json-dump.ts";
 
 let fixture: VerificationServer;
 let connector: ReturnType<typeof createComputerSharing>;
@@ -76,8 +77,12 @@ beforeAll(async () => {
   bot = (await api("POST", "/api/bots", { name: "Shared desktop tester" })).body.bot;
   expect((await api("POST", `/api/bots/${bot.id}/messages`, { text: "Inspect the folder shared by my desktop; do not use files on the server." })).status).toBe(202);
   const dump = join(fixture.info.dataDir, "fake-claude-dump.json");
-  await vi.waitFor(() => expect(existsSync(dump)).toBe(true), { timeout: 15_000 });
-  const agents = JSON.parse(readFileSync(dump, "utf8")).mcpConfig.mcpServers.agents;
+  const launched = await vi.waitFor(() => {
+    const parsed = readCompleteJson(dump);
+    expect(parsed).toBeDefined();
+    return parsed!.value;
+  }, { timeout: 15_000 });
+  const agents = launched.mcpConfig.mcpServers.agents;
   expect(agents.env.JLFBOT_COMMS_TOKEN).toBeTruthy();
   proxy = spawn(agents.command, agents.args, {
     env: { PATH: process.env.PATH, HOME: fixture.info.dataDir, ...agents.env }, stdio: ["pipe", "pipe", "pipe"],

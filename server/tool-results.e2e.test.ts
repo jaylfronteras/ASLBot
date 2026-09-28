@@ -1,12 +1,13 @@
 // Actual mounted agents MCP -> live capability -> bounded cache -> paged read.
 // All profiles, turns and transcripts belong to the shared disposable fixture.
 import { spawn, type ChildProcess } from "node:child_process";
-import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { createInterface } from "node:readline";
 import { expect, it } from "vitest";
 import { launchVerificationServer, runControlOmb } from "../scripts/control-jlfbot.ts";
 import { waitForExit } from "./testing/cleanup.ts";
+import { readCompleteJson } from "./testing/json-dump.ts";
 
 it("bounds a real roster, retrieves its tail, isolates owners and expires stopped capabilities", async () => {
   const fixture = await launchVerificationServer({ FAKE_CLAUDE_MODE: "hang" });
@@ -27,8 +28,9 @@ it("bounds a real roster, retrieves its tail, isolates owners and expires stoppe
   const held = async (bot: any, threadId = bot.activeTaskId) => {
     rmSync(dumpFile, { force: true });
     await cli("send", "--bot", bot.id, "--task", threadId, "--text", "Hold this isolated verification turn open.");
-    await expect.poll(() => existsSync(dumpFile), { timeout: 15_000 }).toBe(true);
-    const mounted = JSON.parse(readFileSync(dumpFile, "utf8")).mcpConfig.mcpServers.agents;
+    let parsed: { value: any } | undefined;
+    await expect.poll(() => (parsed = readCompleteJson(dumpFile)) !== undefined, { timeout: 15_000 }).toBe(true);
+    const mounted = parsed!.value.mcpConfig.mcpServers.agents;
     expect(mounted.env.JLFBOT_THREAD_ID).toBe(threadId);
     const proxy = spawn(mounted.command, mounted.args, { cwd: process.cwd(),
       env: { ...mounted.env, PATH: process.env.PATH, HOME: fixture.info.dataDir }, stdio: ["pipe", "pipe", "pipe"] });

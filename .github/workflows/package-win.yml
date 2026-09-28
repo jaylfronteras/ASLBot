@@ -1,5 +1,5 @@
-# Windows installer, built on a real Windows runner and published as a
-# workflow artifact.
+# Windows installer (NSIS) and portable exe, built on a real Windows runner
+# and published as a workflow artifact.
 #
 # Why this exists: releases are cut by hand from a Mac, which cannot build
 # an NSIS installer (electron-builder needs wine, and a cross-built exe
@@ -124,6 +124,78 @@ jobs:
           cat "$RUNNER_TEMP/server.log" || true
           kill $pid 2>/dev/null || true
           exit 1
+
+      # The release carries exactly these files. latest.yml is the updater
+      # feed for the NSIS installer; it must never point at the portable exe
+      # (which does not self-update).
+      - name: verify the release files
+        shell: bash
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          fail=0
+          for f in "release/ASLBot-${version}-setup.exe" "release/ASLBot-${version}-setup.exe.blockmap" \
+                   release/latest.yml "release/ASLBot-${version}-portable.exe"; do
+            [ -f "$f" ] || { echo "::error::missing $f"; fail=1; }
+          done
+          grep -Fq "ASLBot-${version}-setup.exe" release/latest.yml || {
+            echo "::error::latest.yml does not reference ASLBot-${version}-setup.exe"; fail=1; }
+          if grep -qi portable release/latest.yml; then
+            echo "::error::latest.yml references the portable exe"; fail=1
+          fi
+          echo "--- latest.yml ---"; cat release/latest.yml
+          exit $fail
+
+      # Run the real portable exe from a folder standing in for a USB drive,
+      # with the packaged renderer smoke hook, and prove it keeps everything in
+      # ASLBot-data beside the exe and leaves the host profile untouched.
+      - name: smoke-launch the portable exe from a USB-like folder
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $version = node -p "require('./package.json').version"
+          $drive = Join-Path $env:RUNNER_TEMP "usb-drive"
+          New-Item -ItemType Directory -Force $drive | Out-Null
+          Copy-Item "release/ASLBot-$version-portable.exe" $drive
+          $exe = Join-Path $drive "ASLBot-$version-portable.exe"
+          $data = Join-Path $drive "ASLBot-data"
+          $result = Join-Path $env:RUNNER_TEMP "portable-smoke.txt"
+          $hostPaths = @(
+            (Join-Path $env:USERPROFILE ".aslbot"),
+            (Join-Path $env:APPDATA "ASLBot"), (Join-Path $env:APPDATA "aslbot"),
+            (Join-Path $env:LOCALAPPDATA "ASLBot"), (Join-Path $env:LOCALAPPDATA "aslbot-updater")
+          )
+          foreach ($p in $hostPaths) { if (Test-Path $p) { throw "host path exists before the smoke: $p" } }
+
+          $env:JLFBOT_SMOKE_TEST = "1"
+          $env:JLFBOT_SMOKE_RESULT_FILE = $result
+          $proc = Start-Process -FilePath $exe -PassThru
+          $deadline = (Get-Date).AddMinutes(4)
+          while (-not (Test-Path $result) -and (Get-Date) -lt $deadline) { Start-Sleep -Seconds 2 }
+          if (-not (Test-Path $result)) {
+            Get-ChildItem -Recurse $data -ErrorAction SilentlyContinue | Select-Object FullName | Format-Table -AutoSize | Out-String -Width 400 | Write-Host
+            Get-ChildItem (Join-Path $data "logs") -Filter *.log -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "--- $($_.Name)"; Get-Content $_.FullName -Tail 80 }
+            throw "the portable app never reported a smoke result"
+          }
+          # smoke mode closes the window, which quits the app; wait for the
+          # launcher and app to exit so the folder can be inspected at rest
+          $deadline = (Get-Date).AddMinutes(2)
+          while ((Get-Process -Name "ASLBot*" -ErrorAction SilentlyContinue) -and (Get-Date) -lt $deadline) { Start-Sleep -Seconds 2 }
+          Get-Process -Name "ASLBot*" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+
+          $line = Get-Content $result -Raw
+          Write-Host $line
+          if ($line -notmatch "renderer-ready") { throw "portable renderer smoke failed" }
+          $report = ($line -replace '^\[smoke\] renderer-ready ', '') | ConvertFrom-Json
+          foreach ($key in @("userData", "logs", "dataDir")) {
+            $value = [string]$report.$key
+            if (-not $value.StartsWith($data, [System.StringComparison]::OrdinalIgnoreCase)) { throw "$key is outside ASLBot-data: $value" }
+          }
+          foreach ($sub in @("data", "electron", "logs")) {
+            if (-not (Test-Path (Join-Path $data $sub))) { throw "ASLBot-data\$sub was not created" }
+          }
+          if (-not (Test-Path (Join-Path $data "logs\server.log"))) { throw "server.log is not in ASLBot-data\logs" }
+          foreach ($p in $hostPaths) { if (Test-Path $p) { throw "portable run wrote to the host: $p" } }
+          Write-Host "portable exe kept its state in $data and left the host profile untouched"
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:

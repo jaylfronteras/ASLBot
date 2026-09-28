@@ -4,7 +4,7 @@
 # partial release. That keeps release credentials and publication authority
 # in the unified release workflow while making every release candidate
 # reproducible from an exact ref. Attach the resulting files to the matching
-# canonical JLFBot release after the smoke test passes.
+# ASLBot GitHub release after the smoke test passes.
 name: Package Ubuntu
 
 on:
@@ -40,11 +40,9 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Clean generated output
         run: pnpm clean
-      - name: Stage the pinned CUA runtime
-        run: pnpm build:cua:linux
-      - name: Prove overlay-free X11 input routing
-        run: dbus-run-session -- xvfb-run -a pnpm smoke:cua-x11-input
-      - name: Package from the verified offline CUA stage
+      # ASLBot ships no computer-use runtime (no CUA staging, no X11 input
+      # proof); this mirrors the "package + smoke (Ubuntu 24.04 x64)" CI job.
+      - name: Package without a computer-use runtime
         run: pnpm package:linux:offline
       - name: Verify package contents and metadata
         run: node scripts/verify-linux-package.mjs
@@ -65,14 +63,31 @@ jobs:
           sudo --preserve-env=CI,RUNNER_TEMP node scripts/smoke-deb-upgrade.mjs "${deb[0]}"
       - name: Prove the handed-over Ubuntu command installs
         # The .deb path ends with a command on the user's clipboard, so the
-        # command is the deliverable. Runs it as root on a clean Ubuntu through
-        # a real shell, and checks that the `dpkg -i` it replaced still fails
-        # there — the reason the app must not run that itself.
+        # command is the deliverable. Runs it as root on a clean Ubuntu
+        # container (a CI-only harness; the app itself needs no Docker) and
+        # checks that the `dpkg -i` it replaced still fails there.
         run: |
           deb=(release/*.deb)
           test "${#deb[@]}" -eq 1
           pnpm smoke:deb-command "${deb[0]}"
+      # The AppImage update smoke installs the CURRENT PUBLISHED Linux release
+      # from the live feed. Until an ASLBot release carries latest-linux.yml
+      # there is nothing to update to, so the step is skipped (with a notice)
+      # rather than failed. It runs automatically once Linux assets are
+      # attached to a release.
+      - name: Check for a published Linux release feed
+        id: feed
+        shell: bash
+        run: |
+          if curl -fsSL --max-time 30 -o /dev/null \
+              "https://github.com/${{ github.repository }}/releases/latest/download/latest-linux.yml"; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No published release with latest-linux.yml yet; skipping the live AppImage update smoke."
+          fi
       - name: Prove an AppImage update lands on the launched path
+        if: steps.feed.outputs.available == 'true'
         # Installs the current published release over a copy named after a
         # version, which is the shape that used to orphan the launcher. Runs
         # against the real feed, so it also covers the differential download.
@@ -83,7 +98,7 @@ jobs:
           sudo chmod 4755 release/linux-unpacked/chrome-sandbox
           test "$(stat -c '%U:%G %a' release/linux-unpacked/chrome-sandbox)" = "root:root 4755"
       - name: Verify the installed browser with Ubuntu sandbox restrictions
-        run: node scripts/smoke-browser-bundle.mjs --resources /opt/JLFBot/resources
+        run: node scripts/smoke-browser-bundle.mjs --resources /opt/ASLBot/resources
       - name: Launch packaged app and verify lifecycle
         env:
           JLFBOT_KEEP_SMOKE_DIR: "1"
@@ -91,29 +106,29 @@ jobs:
         run: pnpm smoke:linux-package
       - name: Remove the installed upgrade fixture
         if: always()
-        run: sudo dpkg --purge jlfbot || true
+        run: sudo dpkg --purge aslbot || true
       - name: Prepare release assets
         id: release
         shell: bash
         run: |
           set -euo pipefail
           version="$(node -p "require('./package.json').version")"
-          appimage="release/JLFBot-${version}-x86_64.AppImage"
-          deb="release/JLFBot-${version}-amd64.deb"
+          appimage="release/ASLBot-${version}-x86_64.AppImage"
+          deb="release/ASLBot-${version}-amd64.deb"
           test -f "$appimage"
           test -f "$deb"
-          cp "$appimage" release/JLFBot.AppImage
-          cp "$deb" release/JLFBot-amd64.deb
-          chmod 0755 release/JLFBot.AppImage
+          cp "$appimage" release/ASLBot.AppImage
+          cp "$deb" release/ASLBot-amd64.deb
+          chmod 0755 release/ASLBot.AppImage
           (
             cd release
             sha256sum \
               "$(basename "$appimage")" \
               "$(basename "$deb")" \
-              JLFBot.AppImage \
-              JLFBot-amd64.deb > SHA256SUMS-ubuntu-x64.txt
+              ASLBot.AppImage \
+              ASLBot-amd64.deb > SHA256SUMS-ubuntu-x64.txt
           )
-          echo "artifact-name=jlfbot-ubuntu-${version}-x64" >> "$GITHUB_OUTPUT"
+          echo "artifact-name=aslbot-ubuntu-${version}-x64" >> "$GITHUB_OUTPUT"
           echo "version: $version"
           echo "commit:  $(git rev-parse HEAD)"
           cat release/SHA256SUMS-ubuntu-x64.txt
@@ -121,7 +136,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: failure()
         with:
-          name: jlfbot-ubuntu-smoke-diagnostics
+          name: aslbot-ubuntu-smoke-diagnostics
           path: |
             /tmp/jlfbot-linux-smoke-*
             /tmp/jlfbot-linux-smoke-runtime-*
@@ -132,10 +147,10 @@ jobs:
         with:
           name: ${{ steps.release.outputs.artifact-name }}
           path: |
-            release/JLFBot-*-amd64.deb
-            release/JLFBot-*-x86_64.AppImage
-            release/JLFBot-amd64.deb
-            release/JLFBot.AppImage
+            release/ASLBot-*-amd64.deb
+            release/ASLBot-*-x86_64.AppImage
+            release/ASLBot-amd64.deb
+            release/ASLBot.AppImage
             release/SHA256SUMS-ubuntu-x64.txt
           if-no-files-found: error
           retention-days: 14

@@ -29,7 +29,7 @@ if (!deb.endsWith(".deb") || !existsSync(deb)) fail("pass the path to a .deb");
 
 // Inside the container the package sits at a path with a space and an
 // apostrophe, so the quoting the app emits is exercised, not assumed.
-const staged = "/root/pending dir/o'brien/JLFBot.deb";
+const staged = "/root/pending dir/o'brien/ASLBot.deb";
 const command = packageInstallCommand("deb", staged);
 console.log(`[smoke-deb-command] command under test:\n    ${command}\n`);
 
@@ -38,7 +38,11 @@ function inContainer(script, { expectFailure = false } = {}) {
     const output = execFileSync(
       RUNTIME,
       [
-        "run", "--rm",
+        // Privileged so the package's postinst can load its browser AppArmor
+        // profile the way it does on a real Ubuntu 24.04 host. Unprivileged,
+        // the container inherits the host's user-namespace restriction but
+        // cannot reach AppArmor, and the postinst correctly fails closed.
+        "run", "--rm", "--privileged",
         "-v", `${deb}:/tmp/package.deb:ro`,
         "-e", "DEBIAN_FRONTEND=noninteractive",
         IMAGE,
@@ -50,9 +54,12 @@ function inContainer(script, { expectFailure = false } = {}) {
     return output;
   } catch (error) {
     if (expectFailure) return String(error.stdout ?? "") + String(error.stderr ?? "");
-    console.error(String(error.stdout ?? ""));
-    console.error(String(error.stderr ?? ""));
-    throw error;
+    // apt's full output is ~100 KB and the process can exit before a huge
+    // write flushes, hiding the dpkg/postinst error; print the tails.
+    const tail = (text) => String(text ?? "").split("\n").slice(-60).join("\n");
+    process.stderr.write(`--- container stdout (tail) ---\n${tail(error.stdout)}\n--- container stderr (tail) ---\n${tail(error.stderr)}\n`);
+    process.exitCode = 1;
+    throw new Error(`container command failed with status ${error.status}`);
   }
 }
 
@@ -62,6 +69,9 @@ const prepare = [
   "set -e",
   "apt-get update -qq",
   "apt-get install -y -qq sudo >/dev/null",
+  // A privileged container still starts without securityfs; mount it so
+  // AppArmor is visible (apparmor_status --enabled, apparmor_parser -r).
+  "if [ ! -d /sys/kernel/security/apparmor ]; then mount -t securityfs securityfs /sys/kernel/security || true; fi",
   `mkdir -p "$(dirname "${staged}")"`,
   `cp /tmp/package.deb "${staged}"`,
 ].join("\n");
@@ -71,8 +81,8 @@ const installed = inContainer(
   [
     prepare,
     command,
-    'dpkg-query -W -f="INSTALLED=\\${Version} \\${db:Status-Abbrev}\\n" jlfbot',
-    'test -x /opt/JLFBot/jlfbot && echo "EXECUTABLE=yes"',
+    'dpkg-query -W -f="INSTALLED=\\${Version} \\${db:Status-Abbrev}\\n" aslbot',
+    'test -x /opt/ASLBot/aslbot && echo "EXECUTABLE=yes"',
   ].join("\n"),
 );
 
