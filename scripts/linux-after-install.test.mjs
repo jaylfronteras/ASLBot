@@ -70,7 +70,7 @@ afterEach(() => {
 describe("Linux DEB sandbox policy", () => {
   it("allows user namespaces only for the exact installed browser executable", () => {
     const policy = fs.readFileSync(browserPolicy, "utf8").replace(/^\s*#.*$/gm, "");
-    expect(policy).toContain("profile jlfbot-browser /opt/JLFBot/resources/browser-engine/chrome/chrome-headless-shell-linux64/chrome-headless-shell flags=(unconfined)");
+    expect(policy).toContain("profile jlfbot-browser /opt/ASLBot/resources/browser-engine/chrome/chrome-headless-shell-linux64/chrome-headless-shell flags=(unconfined)");
     expect(policy).toContain("userns,");
     expect(policy).not.toMatch(/\*|@\{HOME\}|\/home\/|\/tmp\//);
   });
@@ -85,16 +85,13 @@ describe("Linux DEB sandbox policy", () => {
 
 describe.skipIf(process.platform !== "linux")("Linux DEB upgrade hook", () => {
   it("repairs legacy directory and executable modes idempotently", () => {
-    const { appRoot, resources, cuaRoot, chromiumSandbox, browserRoot, chromeRoot, apparmorDir } = fixture();
+    const { appRoot, resources, chromiumSandbox, browserRoot, chromeRoot, apparmorDir } = fixture();
 
     for (let pass = 0; pass < 2; pass += 1) {
       const result = runHook(appRoot);
       expect(result.status, result.stderr).toBe(0);
-      for (const directory of [appRoot, resources, cuaRoot, browserRoot, path.dirname(chromeRoot), chromeRoot]) {
+      for (const directory of [appRoot, resources, browserRoot, path.dirname(chromeRoot), chromeRoot]) {
         expect(fs.lstatSync(directory).mode & 0o777).toBe(0o755);
-      }
-      for (const executable of ["cua-driver", "cua-cursor-theme"]) {
-        expect(fs.lstatSync(path.join(cuaRoot, executable)).mode & 0o777).toBe(0o755);
       }
       expect(fs.lstatSync(chromiumSandbox).mode & 0o7777).toBe(0o4755);
       for (const executable of [path.join(browserRoot, "agent-browser"), path.join(chromeRoot, "chrome-headless-shell"), path.join(chromeRoot, "chrome_crashpad_handler")]) {
@@ -121,8 +118,8 @@ describe.skipIf(process.platform !== "linux")("Linux DEB upgrade hook", () => {
   });
 
   it("fails the install when a bundled executable is missing", () => {
-    const { appRoot, cuaRoot } = fixture();
-    fs.unlinkSync(path.join(cuaRoot, "cua-driver"));
+    const { appRoot, chromeRoot } = fixture();
+    fs.unlinkSync(path.join(chromeRoot, "chrome-headless-shell"));
 
     const result = runHook(appRoot);
     expect(result.status).not.toBe(0);

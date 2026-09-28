@@ -3,8 +3,8 @@
 Run the real-server fixture in an isolated home, with a local Box API stub:
 
 ```sh
-pnpm exec vitest run server/index.test.ts -t 'shares one team computer|dispatches the conversation.s pinned computer|blocks bot-scoped Box lifecycle'
-pnpm exec vitest run server/turn-resources.test.ts server/group-local-vm.e2e.test.ts server/shared-computers.e2e.test.ts
+pnpm exec vitest run server/index.test.ts -t 'blocks bot-scoped Box lifecycle'
+pnpm exec vitest run server/turn-resources.test.ts server/shared-computers.e2e.test.ts
 ```
 
 The shared-team-computer case proves:

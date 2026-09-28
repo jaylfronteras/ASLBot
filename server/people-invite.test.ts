@@ -102,11 +102,11 @@ beforeAll(async () => {
   stub = await startControlPlaneStub();
   home = mkdtempSync(join(tmpdir(), "jlfbot-people-invite-"));
   const staticDir = join(home, "static");
-  mkdirSync(join(home, ".jlfbot"), { recursive: true });
+  mkdirSync(join(home, ".aslbot"), { recursive: true });
   mkdirSync(join(staticDir, "assets"), { recursive: true });
   writeFileSync(join(staticDir, "index.html"), "<!doctype html><title>Served UI</title>");
   // No sign-in list on disk and none in the environment: nobody is welcome yet.
-  writeFileSync(join(home, ".jlfbot", "config.json"), JSON.stringify({ instances: { fixture: { driver: "people-invite-test-shadow" } } }));
+  writeFileSync(join(home, ".aslbot", "config.json"), JSON.stringify({ instances: { fixture: { driver: "people-invite-test-shadow" } } }));
   child = spawn(process.execPath, [join(SERVER_DIR, "index.ts")], {
     cwd: ROOT,
     env: {

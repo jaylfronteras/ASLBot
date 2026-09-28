@@ -155,7 +155,7 @@ describe("CLI startup lifecycle", () => {
       healthRequests++;
       if (healthRequests === 1) return Response.json({}, { status: 503 });
       if (healthRequests === 3) interrupt();
-      return Response.json({ app: "jlfbot", pid: childPid });
+      return Response.json({ app: "aslbot", pid: childPid });
     }));
     expect(await runServe({ ...options, tunnel: true }, vi.fn())).toBe(0);
     expect(healthRequests).toBe(3);
@@ -172,7 +172,7 @@ describe("CLI startup lifecycle", () => {
     vi.stubEnv("JLFBOT_DATA_DIR", process.env.JLFBOT_DATA_DIR);
     for (const stream of [process.stdin, process.stdout]) Object.defineProperty(stream, "isTTY", { value: true, configurable: true });
     vi.stubGlobal("fetch", vi.fn(async (url: string | URL | Request) => String(url).endsWith("/api/health")
-      ? Response.json({ app: "jlfbot", pid: childPid })
+      ? Response.json({ app: "aslbot", pid: childPid })
       : Response.json({ environmentId: workspaceId })));
     const start = vi.fn();
     const open = vi.fn().mockResolvedValue(true);
@@ -185,7 +185,7 @@ describe("CLI startup lifecycle", () => {
 
   it("does not mistake another workspace on the same port for this one", async () => {
     writeFileSync(join(dataDir, "environment-id"), workspaceId);
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(Response.json({ app: "jlfbot", pid: childPid }))
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(Response.json({ app: "aslbot", pid: childPid }))
       .mockResolvedValueOnce(Response.json({ environmentId: "different-workspace" })));
     expect(await isWorkspaceRunning(options)).toBe(false);
   });
@@ -198,7 +198,7 @@ describe("CLI startup lifecycle", () => {
       requests.push(address);
       expect(init?.method).not.toBe("POST");
       if (address.endsWith("/api/health")) {
-        return ++healthRequests === 1 ? Response.json({}, { status: 503 }) : Response.json({ app: "jlfbot", pid: childPid });
+        return ++healthRequests === 1 ? Response.json({}, { status: 503 }) : Response.json({ app: "aslbot", pid: childPid });
       }
       if (address.startsWith("https://")) {
         if (failure === "unreachable") throw new Error("Fixture endpoint offline");
@@ -226,7 +226,7 @@ describe("CLI startup lifecycle", () => {
     const fetcher = vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
       const address = String(url);
       if (address.endsWith("/api/health")) {
-        return ++healthRequests === 1 ? Response.json({}, { status: 503 }) : Response.json({ app: "jlfbot", pid: childPid });
+        return ++healthRequests === 1 ? Response.json({}, { status: 503 }) : Response.json({ app: "aslbot", pid: childPid });
       }
       if (address === `http://127.0.0.1:${options.port}/api/auth/pairing`) {
         expect(init?.method).toBe("POST");

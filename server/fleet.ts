@@ -121,7 +121,7 @@ export function workspaceHome(layout: FleetLayout, slug: string): string {
 }
 
 export function workspaceDataDir(layout: FleetLayout, slug: string): string {
-  return join(workspaceHome(layout, slug), ".jlfbot");
+  return join(workspaceHome(layout, slug), ".aslbot");
 }
 
 export function assertSlug(slug: string): void {

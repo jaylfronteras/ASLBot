@@ -78,9 +78,9 @@ beforeAll(async () => {
   WEBHOOK_PORT = base + 1;
   BASE = `http://127.0.0.1:${PORT}`;
   home = mkdtempSync(join(tmpdir(), "jlfbot-shared-computer-gate-"));
-  mkdirSync(join(home, ".jlfbot"), { recursive: true });
+  mkdirSync(join(home, ".aslbot"), { recursive: true });
   // No `features` block at all: the shipped default.
-  writeFileSync(join(home, ".jlfbot", "config.json"), JSON.stringify({
+  writeFileSync(join(home, ".aslbot", "config.json"), JSON.stringify({
     instances: { claude: { driver: "claudeAgent", displayName: "Gate fixture", config: { cli: FAKE_CLAUDE_CLI } } },
   }));
   child = spawn(process.execPath, [join(SERVER_DIR, "index.ts")], {

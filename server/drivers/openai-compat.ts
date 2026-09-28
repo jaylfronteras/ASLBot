@@ -29,6 +29,8 @@ export interface OpenAICompatConfig {
   managedModels?: string[];
   /** Model ids that accept images. Absent or empty leaves every model text-only. */
   imageModels?: string[];
+  /** When true, every model on this provider accepts images. */
+  vision?: boolean;
 }
 
 const MAX_IMAGE_MODELS = 256;
@@ -85,6 +87,7 @@ function isOpenRouterUrl(url: string): boolean {
 function decodeConfig(raw: unknown): OpenAICompatConfig {
   const config = (raw ?? {}) as Record<string, unknown>;
   if (config.tools !== undefined && typeof config.tools !== "boolean") throw new Error("tools must be a boolean");
+  if (config.vision !== undefined && typeof config.vision !== "boolean") throw new Error("vision must be a boolean");
   if (config.managedModels !== undefined && (!Array.isArray(config.managedModels) || !config.managedModels.length || config.managedModels.some(model => typeof model !== "string" || !model.trim()))) throw new Error("Invalid managed models.");
   const imageModels = imageModelIds(config.imageModels);
   const envUrl = process.env.OPENAI_COMPAT_URL;
@@ -106,6 +109,7 @@ function decodeConfig(raw: unknown): OpenAICompatConfig {
       ? config.provider || undefined
       : process.env.OPENAI_COMPAT_PROVIDER || undefined,
     ...(imageModels ? { imageModels } : {}),
+    ...(config.vision === true ? { vision: true } : {}),
   };
 }
 
@@ -152,7 +156,10 @@ export const OpenAICompatDriver: ProviderDriver<OpenAICompatConfig> = {
             : [{ id: config.model, label: config.model, custom: true }, ...DEFAULT_MODELS.options],
         }
       : DEFAULT_MODELS;
-    catalog = { ...catalog, options: stampImageModels(catalog.options, config.imageModels) };
+    const withVision = (options: ModelCatalog["options"]) => config.vision
+      ? options.map((option) => ({ ...option, images: true }))
+      : stampImageModels(options, config.imageModels);
+    catalog = { ...catalog, options: withVision(catalog.options) };
 
     const fetchModels = async () => {
       if (config.managedModels) return;
@@ -181,7 +188,7 @@ export const OpenAICompatDriver: ProviderDriver<OpenAICompatConfig> = {
         if (config.model && !options.some((model) => model.id === config.model)) {
           options.unshift({ id: config.model, label: config.model, custom: true });
         }
-        catalog = { default: config.model ?? options[0].id, options: stampImageModels(options, config.imageModels) };
+        catalog = { default: config.model ?? options[0].id, options: withVision(options) };
       } catch {
         // Catalog refresh is opportunistic; keep the seeded options.
       }

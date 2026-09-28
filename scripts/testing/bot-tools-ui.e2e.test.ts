@@ -10,6 +10,7 @@ import { waitForExit } from "../../server/testing/cleanup.ts";
 import { BOT_ROLES, roleProfilePatch } from "../../src/lib/bot-roles.ts";
 import { runControlOmb } from "../control-jlfbot.ts";
 import { UI_TOOLS_DIR } from "./control-jlfbot-ui.ts";
+import { allowFixtureChat } from "./preview-fixture.ts";
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const binary = resolveAgentBrowserBinary({ dataDir: UI_TOOLS_DIR, env: process.env });
@@ -41,20 +42,20 @@ describe("bot setup and tools in the real renderer", () => {
       if (child!.exitCode !== null || child!.signalCode !== null) throw new Error(`UI launcher exited: ${stderr}`);
       try { info = JSON.parse(stdout); return Boolean(info.ui); } catch { return false; }
     }, { timeout: LAUNCH_TIMEOUT_MS + 120_000, interval: 250 }).toBe(true);
+    await allowFixtureChat(info.url);
     const ui = (verb: string, ...args: string[]) => runControlOmb(["ui", verb, "--ui", info.ui, ...args]) as Promise<Record<string, any>>;
     const evaluate = async (js: string) => (await ui("eval", "--js", js)).result;
+    await expect.poll(() => evaluate(`document.querySelector('textarea')?.getAttribute('aria-label') ?? ''`), { timeout: 15_000 }).toBe("Message Pepper");
     const click = (name: string) => ui("click", "--name", name);
     const press = (keys: string) => ui("press", "--keys", keys);
     const bots = async (): Promise<SavedBot[]> => (await fetch(`${info.url}/api/bots`).then((response) => response.json())).bots;
     const snapshot = async () => (await ui("snapshot")).snapshot as string;
     const openTools = async () => {
-      // Composer tray Tools is gone; open bot settings (mascot) then Access.
-      // Accordion starts collapsed, so Access must be expanded explicitly.
-      const state = await ui("snapshot", "--interactive");
-      const profile = Object.entries(state.refs as Record<string, { role: string; name: string }>)
-        .find(([, entry]) => entry.role === "button" && /Open .+ profile/.test(entry.name));
-      expect(profile).toBeDefined();
-      await ui("click", "--ref", `@${profile![0]}`);
+      // Simple mode has no profile button. History opens the settings dialog
+      // on Conversations; Access is the accordion row for MCP.
+      await expect.poll(() => evaluate(`Boolean(document.querySelector('[data-sidebar-bot-row="${created[0].id}"]'))`), { timeout: 10_000 }).toBe(true);
+      await evaluate(`document.querySelector('[data-sidebar-bot-row="${created[0].id}"]')?.click(); true`);
+      await click(`Earlier conversations with ${created[0].name}`);
       await click("Access");
     };
     const clickRole = async (title: string) => {
@@ -142,8 +143,6 @@ describe("bot setup and tools in the real renderer", () => {
     await openHeaderUsage(); // a stale search must not hide an external target
     expect(await evaluate("document.querySelector('[aria-label=\"Search settings\"]')?.value")).toBe("");
     await ui("screenshot", "--out", `${info.logPath}.settings.png`);
-    await click("Overview");
-    await expect.poll(snapshot, { timeout: 10_000 }).toContain("Optional ways to customize this bot. You can start chatting now.");
     await click("Access");
     await click("Add an MCP server…");
     // The registry loads on mount; Paste config is disabled until it finishes.

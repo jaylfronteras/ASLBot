@@ -85,8 +85,11 @@ jobs:
           fi
           [ -f "$res/app-update.yml" ] || { echo "::error::missing $res/app-update.yml"; fail=1; }
           if [ -f "$res/app-update.yml" ]; then
-            grep -Eq '^repo: JLFBot$' "$res/app-update.yml" || {
-              echo "::error::app-update.yml does not point at jaylfronteras/JLFBot"; fail=1; }
+            grep -Eq '^repo: ASLBot$' "$res/app-update.yml" || {
+              echo "::error::app-update.yml does not point at jaylfronteras/ASLBot"; fail=1; }
+            if [ -e "$res/cua-driver.exe" ] || [ -e "$res/cua-sdk" ]; then
+              echo "::error::Windows package still contains a computer-use runtime"; fail=1;
+            fi
             # while the build is unsigned, a publisherName makes
             # electron-updater reject every update as untrusted
             if grep -q "publisherName" "$res/app-update.yml"; then

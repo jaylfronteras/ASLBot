@@ -7,6 +7,8 @@ import {
   ChevronRight,
   Bug,
   Copy,
+  ListChecks,
+  Settings,
   Crown,
   MessageSquareReply,
   Monitor,
@@ -1261,11 +1263,35 @@ export function ChatView({ bot: profile }: { bot: Bot }) {
               <span className="@max-4xl/chathead:hidden">{t("chat.stop")}</span>
             </button>
           )}
-          <TaskPicker bot={bot} />
+          {!simpleMode && <TaskPicker bot={bot} />}
           <UsageChip bot={bot} />
-          {!remoteClient && <ModelPicker key={bot.threadId} bot={bot} threadId={bot.threadId} />}
-          <CallButton bot={bot} />
-          <button
+          {!remoteClient && !simpleMode && <ModelPicker key={bot.threadId} bot={bot} threadId={bot.threadId} />}
+          {!simpleMode && <CallButton bot={bot} />}
+          {simpleMode && (
+            <>
+              <button
+                type="button"
+                onClick={() => dispatch({ type: "toggleSettings", open: true, section: "overview" })}
+                aria-label="Bot settings"
+                aria-pressed={state.settingsOpen && state.botSettingsSection !== "routines"}
+                className={cn("rounded-md p-1.5 hover:bg-raised", state.settingsOpen && state.botSettingsSection !== "routines" ? "text-accent" : "text-ink-secondary hover:text-ink")}
+                title="Settings"
+              >
+                <Settings size={18} />
+              </button>
+              <button
+                type="button"
+                onClick={() => dispatch({ type: "toggleSettings", open: true, section: "routines" })}
+                aria-label="Bot routines"
+                aria-pressed={state.settingsOpen && state.botSettingsSection === "routines"}
+                className={cn("rounded-md p-1.5 hover:bg-raised", state.settingsOpen && state.botSettingsSection === "routines" ? "text-accent" : "text-ink-secondary hover:text-ink")}
+                title="Routines"
+              >
+                <ListChecks size={18} />
+              </button>
+            </>
+          )}
+          {!simpleMode && <button
             data-tour="computer"
             onClick={() => dispatch({ type: "toggleComputer" })}
             className={cn(
@@ -1275,8 +1301,8 @@ export function ChatView({ bot: profile }: { bot: Bot }) {
             title={t("chat.computer")}
           >
             <Monitor size={18} />
-          </button>
-          {!remoteClient && <button
+          </button>}
+          {!remoteClient && !simpleMode && <button
             onClick={() => dispatch({ type: "toggleInspector" })}
             aria-label={t("chat.inspector")}
             aria-pressed={state.inspectorOpen}

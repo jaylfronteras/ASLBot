@@ -17,7 +17,7 @@ import { resolveAgentBrowserBinary } from "../../server/browser-engine.ts";
 import { removeTempDir, waitForExit } from "../../server/testing/cleanup.ts";
 import { runControlOmb } from "../control-jlfbot.ts";
 import { UI_TOOLS_DIR } from "./control-jlfbot-ui.ts";
-import { fixtureApi } from "./preview-fixture.ts";
+import { allowFixtureChat, fixtureApi, typeComposerDraft } from "./preview-fixture.ts";
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const CLI = join(ROOT, "scripts", "control-jlfbot.ts");
@@ -228,37 +228,11 @@ describe("control-jlfbot ui drives the real renderer", () => {
     // needs no flag; the fixture's default config is what a fresh install has.
     expect(flagged.features).toMatchObject({ skillAuthoring: true });
 
-    // The header defaults to the conversation. Updating the bot default is
-    // explicit, and same-provider model changes preserve permissions.
-    const savedBot = async () => (await fetch(`${info.url}/api/bots`).then((response) => response.json())).bots.find((bot: any) => bot.id === info.botId);
-    const originalBot = await savedBot();
-    const originalModel = originalBot.modelSelection.model;
-    const models = await runControlOmb(["models", "--url", info.url]) as any;
-    const options = models.instances.find((instance: any) => instance.instanceId === originalBot.modelSelection.instanceId).models.options;
-    const originalLabel = options.find((option: any) => option.id === originalModel).label;
-    const nextModel = options.find((option: any) => option.id !== originalModel);
-    await ui("click", info.ui, "--name", originalLabel);
-    expect(await ui("eval", info.ui, "--js", "[...document.querySelectorAll('[aria-label=\"Apply model changes to\"] button')].find(b => b.textContent === 'Only this thread').getAttribute('aria-pressed')"))
-      .toMatchObject({ result: "true" });
-    await ui("click", info.ui, "--name", "Thread + bot default");
-    const scopeShot = join(evidenceDir, "model-scope.png");
-    mkdirSync(evidenceDir, { recursive: true });
-    await ui("screenshot", info.ui, "--out", scopeShot);
-    await ui("click", info.ui, "--name", nextModel.label);
-    await expect.poll(async () => (await savedBot()).modelSelection.model, { timeout: 10_000 }).toBe(nextModel.id);
-    expect((await savedBot()).tasks.find((task: any) => task.threadId === originalBot.threadId).modelSelection.model).toBe(nextModel.id);
-    await ui("click", info.ui, "--name", nextModel.label);
-    await ui("click", info.ui, "--name", "Only this thread");
-    // The provider-default badge is part of the accessible model-row name.
-    const modelSnapshot = await ui("snapshot", info.ui, "--interactive");
-    const originalRow = Object.entries(modelSnapshot.refs as Record<string, { name: string; role: string }>)
-      .find(([, value]) => value.role === "button" && value.name.startsWith(originalLabel));
-    expect(originalRow).toBeDefined();
-    await ui("click", info.ui, "--ref", `@${originalRow![0]}`);
-    await expect.poll(async () => (await savedBot()).tasks.find((task: any) => task.threadId === originalBot.threadId).modelSelection.model,
-      { timeout: 10_000 }).toBe(originalModel);
-    expect((await savedBot()).modelSelection.model).toBe(nextModel.id);
-    expect((await savedBot()).approvalMode).toBe(originalBot.approvalMode);
+    // CLI engines stay in the fixture so the fake can answer, but the chat
+    // stays closed until an OpenAI-compatible provider is available.
+    await allowFixtureChat(info.url);
+    await expect.poll(async () => (await ui("eval", info.ui, "--js", "document.querySelector('textarea')?.getAttribute('aria-label') ?? ''")).result,
+      { timeout: 15_000 }).toBe("Message Pepper");
 
     const before = await ui("snapshot", info.ui, "--interactive");
     expect(before.ok).toBe(true);
@@ -267,10 +241,10 @@ describe("control-jlfbot ui drives the real renderer", () => {
     expect(moreComposers).toEqual([]);
     expect(before.snapshot).not.toContain(REPLY);
 
-    const typed = await ui("type", info.ui, "--ref", composer, "--text", "hello");
-    expect(typed).toMatchObject({ ok: true, target: composer, typed: "hello" });
-    const pressed = await ui("press", info.ui, "--keys", "Enter");
-    expect(pressed).toMatchObject({ ok: true, pressed: "Enter" });
+    const typed = await typeComposerDraft(ui, info.ui, "Message Pepper", "hello");
+    expect(typed).toMatchObject({ ok: true, name: "Message Pepper", typed: "hello" });
+    const sent = await ui("click", info.ui, "--name", "Send message");
+    expect(sent).toMatchObject({ ok: true, name: "Send message" });
 
     const settled = await ui("wait-settle", info.ui, "--timeout", "60");
     expect(settled).toMatchObject({ ok: true, status: "settled", browser: { state: "networkidle" }, renderer: { rendered: true } });
@@ -349,33 +323,11 @@ describe("control-jlfbot ui drives the real renderer", () => {
     expect(collapsed.snapshot).toContain("Expand the run");
     expect(collapsed.snapshot).not.toContain('list "Run steps"');
 
-    await ui("click", info.ui, "--name", "Inspector");
-    const inspected = await ui("snapshot", info.ui);
-    const runLog = (inspected.snapshot as string).slice((inspected.snapshot as string).indexOf('complementary "Inspector"'));
-    expect(runLog).toContain('tab "Run Log" [selected');
-    expect(runLog).toContain("pnpm control:jlfbot doctor");
-    expect(runLog).toContain("pnpm control:jlfbot ui click --name Missing");
-    expect(runLog).toContain('StaticText "Failed"');
-    expect(runLog).toContain("Copy redacted run log");
-    await ui("screenshot", info.ui, "--out", join(evidenceDir, "run-log.png"));
-
-    // Existing technical views remain reachable by accessible tab references.
-    const [eventsTab] = refsNamed(inspected, "Events", "tab");
-    expect(eventsTab).toBeDefined();
-    await ui("click", info.ui, "--ref", eventsTab);
-    const events = await ui("snapshot", info.ui);
-    expect(events.snapshot).toContain("turn.started");
-    const [rawTab] = refsNamed(events, "Raw", "tab");
-    await ui("click", info.ui, "--ref", rawTab);
-    expect((await ui("snapshot", info.ui)).snapshot).toContain('tab "Raw" [selected');
-    await ui("click", info.ui, "--name", "Close the Inspector");
-    expect((await ui("snapshot", info.ui)).snapshot).not.toContain('complementary "Inspector"');
-
     const logs = await ui("console", info.ui);
     expect(logs.ok).toBe(true);
     expect((logs.messages as Array<{ type: string; text: string }>).filter((message) => message.type === "error")).toEqual([]);
     const title = await ui("eval", info.ui, "--js", "document.title");
-    expect(title).toMatchObject({ ok: true, result: "Isolated JLFBot Chat" });
+    expect(title).toMatchObject({ ok: true, result: "ASLBot" });
 
     // Ctrl-C: browser, preview and fixture close; only the fixture's data goes.
     await waitForExit(launched.child, { signal: "SIGINT", graceMs: 30_000 });

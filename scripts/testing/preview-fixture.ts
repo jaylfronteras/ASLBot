@@ -115,6 +115,43 @@ export interface FixtureApiOptions {
   observe?: (call: { method: string; path: string; status: number }) => void;
 }
 
+/** The simple UI stays on "Add a provider" until some OpenAI-compatible
+ * instance is available. A fixture key opens the chat; the fake CLI engines
+ * still run the turns. */
+export async function allowFixtureChat(baseUrl: string): Promise<void> {
+  await fixtureApi(baseUrl)("PUT", "/api/config", {
+    openaiCompat: { key: "fixture-ui-key", url: "http://127.0.0.1:9/v1" },
+  });
+}
+
+type UiCall = (verb: string, handle: string, ...args: string[]) => Promise<Record<string, any>>;
+
+/** Type into a composer, then make sure the controlled value is the whole
+ * draft. A keystroke burst can commit only a prefix while the renderer is
+ * busy, and Send reads React state rather than the leftover DOM value. */
+export async function typeComposerDraft(ui: UiCall, handle: string, label: string, text: string): Promise<Record<string, any>> {
+  const typed = await ui("type", handle, "--name", label, "--text", text);
+  const query = `document.querySelector(${JSON.stringify(`textarea[aria-label=${JSON.stringify(label)}]`)})`;
+  const read = () => ui("eval", handle, "--js", `${query}?.value ?? ""`);
+  const commit = () => ui("eval", handle, "--js", `(() => {
+    const el = ${query};
+    const set = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value")?.set;
+    if (!el || !set) return "missing";
+    set.call(el, ${JSON.stringify(text)});
+    el.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: ${JSON.stringify(text)} }));
+    return el.value;
+  })()`);
+  const deadline = Date.now() + 5_000;
+  for (;;) {
+    if ((await read()).result !== text) await commit();
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    if ((await read()).result === text) return typed;
+    if (Date.now() >= deadline) {
+      throw new Error(`composer ${JSON.stringify(label)} stayed ${JSON.stringify((await read()).result)}`);
+    }
+  }
+}
+
 /** JSON fetch against the fixture server; a non-2xx status throws with the body. */
 export function fixtureApi(baseUrl: string, options: FixtureApiOptions = {}) {
   return async (method: string, path: string, body?: unknown): Promise<any> => {

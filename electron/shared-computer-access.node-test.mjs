@@ -376,11 +376,11 @@ test("filesystem identities keep all 64 bits instead of rounding distinct inode 
 test("the harness data directory is protected through a broad share", async t => {
   const { dir } = await fixture(t);
   const shared = path.join(dir, "share");
-  const dataDir = path.join(shared, ".jlfbot");
+  const dataDir = path.join(shared, ".aslbot");
   await mkdir(dataDir, { recursive: true });
   await writeFile(path.join(dataDir, "config.json"), JSON.stringify({ anthropicApiKey: "sk-fixture" }));
   const stub = stubWorkspace();
-  stub.state.work.push({ action: "read_file", path: ".jlfbot/config.json" });
+  stub.state.work.push({ action: "read_file", path: ".aslbot/config.json" });
   const sharing = createComputerSharing({
     file: path.join(dir, "profile", "computer-sharing.json"), fetch: stub.fetchImpl,
     environments: () => [stub.env], enabled: async () => true, cuaConnection: async () => null, protectedPaths: [dataDir],
@@ -402,7 +402,7 @@ test("a harness data directory that does not exist yet still saves and connects"
   stub.state.work.push({ action: "read_file", path: "note.txt" });
   const sharing = createComputerSharing({
     file: path.join(dir, "profile", "computer-sharing.json"), fetch: stub.fetchImpl,
-    environments: () => [stub.env], enabled: async () => true, cuaConnection: async () => null, protectedPaths: [path.join(dir, "never-installed", ".jlfbot")],
+    environments: () => [stub.env], enabled: async () => true, cuaConnection: async () => null, protectedPaths: [path.join(dir, "never-installed", ".aslbot")],
   });
   t.after(() => sharing.close());
   const info = await sharing.identity(stub.env);

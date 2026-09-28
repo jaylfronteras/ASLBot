@@ -330,6 +330,7 @@ export function ModelPicker({
   className,
   contained = false,
   label,
+  onlyDriver,
 }: {
   bot: Bot;
   threadId?: string;
@@ -338,6 +339,8 @@ export function ModelPicker({
    * narrow parent (the Agent profile sidebar). */
   contained?: boolean;
   label?: ReactNode;
+  /** When set, the menu lists only this driver. ASLBot settings pass openai-compat. */
+  onlyDriver?: string;
 }) {
   const { state, dispatch, refreshInstances, refreshModels: refreshInstanceModels } = useStore();
   const [open, setOpen] = useState(false);
@@ -355,7 +358,7 @@ export function ModelPicker({
 
   const selection = bot.modelSelection;
   const active = state.instances.find((instance) => instance.instanceId === selection.instanceId);
-  const pickerInstances = configuredModelInstances(state.instances);
+  const pickerInstances = configuredModelInstances(state.instances).filter((instance) => !onlyDriver || instance.driverKind === onlyDriver);
   const selectedVariantLabel = selection.variant === undefined ? undefined : variantLabel(
     active?.models.options.find((option) => option.id === selection.model)?.variants?.find((option) => option.id === selection.variant)
       ?? { id: selection.variant, label: selection.variant },

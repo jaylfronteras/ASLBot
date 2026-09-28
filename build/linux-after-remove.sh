@@ -31,8 +31,8 @@ fi
 # remove an unrelated file that now happens to use the same command name.
 if [ "$TEST_MODE" -eq 0 ]; then
   if command -v update-alternatives >/dev/null 2>&1; then
-    update-alternatives --remove jlfbot /opt/JLFBot/jlfbot
-  elif [ -L /usr/bin/jlfbot ] && [ "$(readlink /usr/bin/jlfbot)" = /opt/JLFBot/jlfbot ]; then
+    update-alternatives --remove aslbot /opt/ASLBot/aslbot
+  elif [ -L /usr/bin/aslbot ] && [ "$(readlink /usr/bin/aslbot)" = /opt/ASLBot/aslbot ]; then
     rm -- /usr/bin/jlfbot
   fi
 fi

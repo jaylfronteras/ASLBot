@@ -125,8 +125,8 @@ export function parseArgs(argv: string[], env: NodeJS.ProcessEnv = process.env):
   }
   const options: CliOptions = {
     command: command === "--help" || command === "-h" ? "help" : (command as CliOptions["command"]),
-    port: Number(env.JLFBOT_PORT || 8799),
-    dataDir: env.JLFBOT_DATA_DIR || defaultDataDir(homedir()),
+    port: Number(env.ASLBOT_PORT || env.JLFBOT_PORT || 8899),
+    dataDir: env.ASLBOT_DATA_DIR || env.JLFBOT_DATA_DIR || defaultDataDir(homedir()),
     tailscale: false,
     tunnel: false,
     client: false,
@@ -349,7 +349,7 @@ function refusedAsService(status: number, body: any): boolean {
 async function serverUp(port: number, pid?: number): Promise<boolean> {
   try {
     const { status, body } = await api(port, "/api/health");
-    return status === 200 && body?.app === "jlfbot" && (pid === undefined || body.pid === pid);
+    return status === 200 && body?.app === "aslbot" && (pid === undefined || body.pid === pid);
   } catch {
     return false;
   }
@@ -360,7 +360,7 @@ async function serverUp(port: number, pid?: number): Promise<boolean> {
 export async function isWorkspaceRunning(options: CliOptions): Promise<boolean> {
   try {
     const { status, body } = await api(options.port, "/api/health");
-    if (status !== 200 || body?.app !== "jlfbot") return false;
+    if (status !== 200 || body?.app !== "aslbot") return false;
     const expected = readFileSync(join(options.dataDir, "environment-id"), "utf8").trim();
     const descriptor = await api(options.port, "/.well-known/jlfbot/environment");
     return /^[0-9a-f-]{36}$/i.test(expected) && descriptor.status === 200 && descriptor.body?.environmentId === expected;
@@ -1160,7 +1160,7 @@ export async function runOnboardingCommand(
     }
     if (options.command === "setup") {
       io.log("\nAll set. Start with: jlfbot (or npx jlfbot without a global install).");
-      if (options.dataDir !== defaultDataDir(homedir()) || options.port !== 8799) {
+      if (options.dataDir !== defaultDataDir(homedir()) || options.port !== 8899) {
         io.log(`Use the same --data-dir (${options.dataDir}) and --port (${options.port}) options when starting.`);
       }
       return 0;

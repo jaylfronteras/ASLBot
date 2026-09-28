@@ -29,11 +29,11 @@ if (appImages.length !== 1) {
 const [appImage] = appImages;
 
 const executables = [
-  path.join(root, "release", "linux-unpacked", "jlfbot"),
+  path.join(root, "release", "linux-unpacked", "aslbot"),
   path.join(root, "release", appImage),
 ];
 if (process.env.JLFBOT_SMOKE_INSTALLED_DEB === "1") {
-  executables.push("/opt/JLFBot/jlfbot");
+  executables.push("/opt/ASLBot/aslbot");
 }
 
 for (const executable of executables) {
@@ -106,7 +106,7 @@ if (process.exitCode === undefined) {
         ...process.env,
         XDG_RUNTIME_DIR: runtimeDirectory,
         JLFBOT_SMOKE_HARD_DEATH: "1",
-        JLFBOT_SMOKE_EXECUTABLE: path.join(root, "release", "linux-unpacked", "jlfbot"),
+        JLFBOT_SMOKE_EXECUTABLE: path.join(root, "release", "linux-unpacked", "aslbot"),
       },
       stdio: "inherit",
     },

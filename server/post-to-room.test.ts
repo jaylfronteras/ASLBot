@@ -185,9 +185,9 @@ beforeAll(async () => {
   home = mkdtempSync(join(tmpdir(), "jlfbot-post-to-room-"));
   fakeClaudeDump = join(home, "fake-claude-dump.json");
   mentionerDump = join(home, "mentioner-dump.json");
-  mkdirSync(join(home, ".jlfbot"), { recursive: true });
+  mkdirSync(join(home, ".aslbot"), { recursive: true });
   writeFileSync(
-    join(home, ".jlfbot", "config.json"),
+    join(home, ".aslbot", "config.json"),
     JSON.stringify({
       instances: {
         claude: { driver: "claudeAgent", displayName: "Fixture Claude", config: { cli: FAKE_CLAUDE_CLI } },

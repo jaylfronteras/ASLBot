@@ -58,7 +58,7 @@ async function idle(id: string) {
 
 beforeAll(async () => {
   home = mkdtempSync(join(tmpdir(), "jlfbot-claude-account-api-"));
-  dataDir = join(home, ".jlfbot");
+  dataDir = join(home, ".aslbot");
   mkdirSync(dataDir, { recursive: true });
   cli = join(home, "fixture-claude.mjs");
   // The official-style auth probe stays synthetic; turns reuse the repository

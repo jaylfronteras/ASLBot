@@ -58,7 +58,7 @@ const fixture = (displayName: string, dump?: string) => ({
 
 beforeAll(async () => {
   home = mkdtempSync(join(tmpdir(), "jlfbot-peer-allowlist-"));
-  const data = join(home, ".jlfbot");
+  const data = join(home, ".aslbot");
   const staticDir = join(home, "static");
   mkdirSync(data, { recursive: true });
   mkdirSync(staticDir, { recursive: true });

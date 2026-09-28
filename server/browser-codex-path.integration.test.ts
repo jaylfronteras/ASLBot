@@ -37,7 +37,7 @@ describe.skipIf(process.platform === "win32")("Codex browser turns with a minima
   beforeAll(async () => {
     home = mkdtempSync(join(tmpdir(), "jlfbot-browser-codex-path-"));
     bin = join(home, ".local", "bin");
-    const data = join(home, ".jlfbot");
+    const data = join(home, ".aslbot");
     mkdirSync(bin, { recursive: true });
     mkdirSync(data);
     // The extensionless executable must exercise /usr/bin/env node, rather

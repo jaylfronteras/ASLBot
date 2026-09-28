@@ -19,7 +19,7 @@ export interface BrandStatus {
   notice?: string;
 }
 
-export const DEFAULT_BRAND: Brand = { name: "JLFBot" };
+export const DEFAULT_BRAND: Brand = { name: "ASLBot" };
 
 let current: BrandStatus = { brand: DEFAULT_BRAND, source: "default", file: "" };
 
