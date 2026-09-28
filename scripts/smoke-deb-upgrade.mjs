@@ -32,7 +32,10 @@ const legacyRoot = path.join(temporary, "legacy-package");
 const controlRoot = path.join(legacyRoot, "DEBIAN");
 const legacyApp = path.join(legacyRoot, "opt", "ASLBot");
 const legacyResources = path.join(legacyApp, "resources");
-const legacyDeb = path.join(temporary, "aslbot_0.1.7_amd64.deb");
+// Must stay below any version we ship (ASLBot restarted at 0.1.0), or apt
+// sees a downgrade and refuses the upgrade under test.
+const LEGACY_VERSION = "0.0.1";
+const legacyDeb = path.join(temporary, `aslbot_${LEGACY_VERSION}_amd64.deb`);
 
 try {
   fs.mkdirSync(controlRoot, { recursive: true, mode: 0o755 });
@@ -43,7 +46,7 @@ try {
     path.join(controlRoot, "control"),
     [
       "Package: aslbot",
-      "Version: 0.1.7",
+      `Version: ${LEGACY_VERSION}`,
       "Architecture: amd64",
       "Maintainer: ASLBot CI <ci@aslbot.invalid>",
       "Description: Legacy ASLBot directory-mode upgrade fixture",
@@ -51,7 +54,7 @@ try {
     ].join("\n"),
     { mode: 0o644 },
   );
-  fs.writeFileSync(path.join(legacyResources, "legacy-upgrade-fixture"), "0.1.7\n", { mode: 0o644 });
+  fs.writeFileSync(path.join(legacyResources, "legacy-upgrade-fixture"), `${LEGACY_VERSION}\n`, { mode: 0o644 });
 
   execFileSync("dpkg-deb", ["--build", "--root-owner-group", legacyRoot, legacyDeb], {
     stdio: "inherit",
@@ -95,7 +98,7 @@ try {
     encoding: "utf8",
   }).trim();
   console.log(
-    `[smoke-deb-upgrade] OK: 0.1.7 legacy modes repaired by ${installedVersion} without weakening the runtime path`,
+    `[smoke-deb-upgrade] OK: ${LEGACY_VERSION} legacy modes repaired by ${installedVersion} without weakening the runtime path`,
   );
 } finally {
   fs.rmSync(temporary, { recursive: true, force: true });
