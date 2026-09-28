@@ -50,9 +50,12 @@ function inContainer(script, { expectFailure = false } = {}) {
     return output;
   } catch (error) {
     if (expectFailure) return String(error.stdout ?? "") + String(error.stderr ?? "");
-    console.error(String(error.stdout ?? ""));
-    console.error(String(error.stderr ?? ""));
-    throw error;
+    // apt's full output is ~100 KB and the process can exit before a huge
+    // write flushes, hiding the dpkg/postinst error; print the tails.
+    const tail = (text) => String(text ?? "").split("\n").slice(-60).join("\n");
+    process.stderr.write(`--- container stdout (tail) ---\n${tail(error.stdout)}\n--- container stderr (tail) ---\n${tail(error.stderr)}\n`);
+    process.exitCode = 1;
+    throw new Error(`container command failed with status ${error.status}`);
   }
 }
 

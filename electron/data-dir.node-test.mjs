@@ -61,7 +61,9 @@ test("Save As accepts bot files from the portable data dir", async () => {
     const file = path.join(dataDir, "workspaces", "bot", "report.txt");
     fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, "report");
-    assert.equal(await resolveSavablePath(file, { home: path.join(root, "host-home"), dataDir }), fs.realpathSync(file));
+    // .native: Windows temp paths can carry 8.3 short names (RUNNER~1) that
+    // only the native realpath expands, as resolveSavablePath does.
+    assert.equal(await resolveSavablePath(file, { home: path.join(root, "host-home"), dataDir }), fs.realpathSync.native(file));
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
@@ -70,7 +72,7 @@ test("Save As accepts bot files from the portable data dir", async () => {
 test("main.mjs applies portable paths before anything else and the updater stays off", () => {
   const read = (name) => fs.readFileSync(new URL(`./${name}`, import.meta.url), "utf8");
   const main = read("main.mjs");
-  const firstImport = main.split("\n").find((line) => line.startsWith("import "));
+  const firstImport = main.split(/\r?\n/).find((line) => line.startsWith("import "));
   assert.equal(firstImport, 'import "./portable-mode.mjs";');
   const portable = read("portable-mode.mjs");
   for (const name of ["userData", "sessionData", "crashDumps", "temp"]) {
