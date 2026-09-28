@@ -19,6 +19,7 @@ import {
 } from "./package-install-command.mjs";
 import { openBlankTerminal } from "./terminal-launch.mjs";
 import { createUpdaterCoordinator } from "./updater-coordinator.mjs";
+import { portableRoot } from "./data-dir.mjs";
 
 const require = createRequire(import.meta.url);
 
@@ -90,8 +91,10 @@ export function attachUpdaterWindow(mainWindow) {
 }
 
 export function startUpdater() {
-  // dev / unsigned builds can't auto-update — leave the banner dormant
-  if (!app.isPackaged) {
+  // dev / unsigned builds can't auto-update — leave the banner dormant. The
+  // portable exe has no installer to update and must not write update caches
+  // onto the host PC, so it never checks either.
+  if (!app.isPackaged || portableRoot(process.env)) {
     updaterCoordinator = null;
     setState({ status: "idle" });
     return;

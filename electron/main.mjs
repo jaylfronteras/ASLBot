@@ -1,5 +1,8 @@
+// Must stay the first import: in portable mode it moves userData, session,
+// logs and crash dumps next to the exe before anything reads those paths.
+import "./portable-mode.mjs";
 import { app, autoUpdater as nativeAutoUpdater, BrowserWindow, WebContentsView, clipboard, desktopCapturer, dialog, ipcMain, Menu, nativeImage, powerMonitor, powerSaveBlocker, safeStorage, screen, session, shell, systemPreferences, utilityProcess } from "electron";
-import { defaultDataDir } from "./data-dir.mjs";
+import { resolveDesktopDataDir } from "./data-dir.mjs";
 import { createRequire } from "node:module";
 import { randomBytes, randomUUID } from "node:crypto";
 import fs from "node:fs";
@@ -330,12 +333,21 @@ const serverSupervisor = createServerSupervisor({
   log: slog,
 });
 
+// The Windows portable exe runs the app behind a launcher whose stdout goes
+// nowhere, so the packaged smoke can also report through a file.
+function writeSmokeResult(line) {
+  const file = process.env.JLFBOT_SMOKE_RESULT_FILE;
+  if (!file) return;
+  try { fs.appendFileSync(file, `[smoke] ${line}\n`); } catch {}
+}
+
 function desktopDataDir() {
   // Match the historical desktop fallback for an unset or empty override,
   // then pass this exact resolved path to the utility child. server/config.ts
   // intentionally treats an empty JLFBOT_DATA_DIR differently, so inheriting it
   // without normalization would lease one directory and write another.
-  return process.env.ASLBOT_DATA_DIR || process.env.JLFBOT_DATA_DIR || defaultDataDir(app.getPath("home"));
+  // A portable copy resolves to ASLBot-data next to the exe (data-dir.mjs).
+  return resolveDesktopDataDir({ env: process.env, home: app.getPath("home") });
 }
 
 async function stopUtilityServer(proc, timeoutMs = UTILITY_SERVER_STOP_TIMEOUT_MS) {
@@ -2187,8 +2199,10 @@ function createWindow({ deferNavigation = false } = {}) {
         result.hardwareAccelerationEnabled = app.isHardwareAccelerationEnabled();
         result.displayMediaRequests = displayMediaRequestCount;
         console.log(`[smoke] renderer-ready ${JSON.stringify(result)}`);
+        writeSmokeResult(`renderer-ready ${JSON.stringify({ ...result, userData: app.getPath("userData"), logs: app.getPath("logs"), dataDir: desktopDataDir() })}`);
       } catch (error) {
         console.error(`[smoke] renderer-failed ${error?.stack ?? error}`);
+        writeSmokeResult(`renderer-failed ${error?.stack ?? error}`);
       } finally {
         if (process.env.JLFBOT_SMOKE_KEEP_OPEN !== "1") win.close();
       }
@@ -2298,7 +2312,7 @@ ipcMain.handle("desktop:export-diagnostics", localOnly("desktop:export-diagnosti
 // renderer-controlled, so it must resolve inside ~/.jlfbot and be a
 // regular file — never a symlink escape or directory.
 ipcMain.handle("desktop:save-file", localOnly("desktop:save-file", async (event, rawPath) => {
-  return withSavableFile(rawPath, { home: os.homedir() }, async ({ defaultName, copyTo }) => {
+  return withSavableFile(rawPath, { home: os.homedir(), dataDir: path.resolve(desktopDataDir()) }, async ({ defaultName, copyTo }) => {
     const parent = BrowserWindow.fromWebContents(event.sender);
     const defaultPath = await defaultSaveName(app.getPath("downloads"), defaultName);
     const choice = await dialog.showSaveDialog(parent ?? undefined, {

@@ -123,6 +123,12 @@ win:
       arch: x64
     - target: zip
       arch: x64
+    # Single no-install exe for USB drives. Its launcher sets
+    # PORTABLE_EXECUTABLE_DIR, which electron/portable-mode.mjs and
+    # electron/data-dir.mjs use to keep all state in ASLBot-data next to the
+    # exe; the updater is disabled there (electron/updater.mjs).
+    - target: portable
+      arch: x64
   icon: build/icon.ico
   extraResources:
     - from: dist-native/cloudflared/win32-x64/cloudflared.exe
@@ -147,6 +153,11 @@ nsis:
   # STABLE filename, so ship a second copy named JLFBot-setup.exe on the
   # release — the same trick as JLFBot.dmg beside JLFBot-${version}.dmg.
   artifactName: ASLBot-${version}-setup.${ext}
+
+portable:
+  # Distinct from -setup so latest.yml (generated for the NSIS installer only)
+  # can never point the updater at the portable exe.
+  artifactName: ASLBot-${version}-portable.${ext}
 
 linux:
   target:

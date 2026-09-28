@@ -3,11 +3,12 @@
 // thread, and can resume it from there — the person's phone shows one
 // place to read. Pinned against the real server with the fake CLI failing
 // exactly one bot's run.
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { expect, it } from "vitest";
 import { launchVerificationServer, runControlOmb } from "../scripts/control-jlfbot.ts";
+import { readCompleteJson } from "./testing/json-dump.ts";
 
 it("reports a crashed run to the Chief, who retries it from the incidents thread", async () => {
   const fixture = await launchVerificationServer();
@@ -25,8 +26,9 @@ it("reports a crashed run to the Chief, who retries it from the incidents thread
   const control = (args: string[]) => runControlOmb([...args, "--url", url]) as Promise<any>;
   const file = (threadId: string, extension: string) => join(dataDir, `${threadId}.${extension}`);
   const dump = async (threadId: string) => {
-    await expect.poll(() => existsSync(file(threadId, "json")), { timeout: 20_000 }).toBe(true);
-    return JSON.parse(readFileSync(file(threadId, "json"), "utf8"));
+    let parsed: { value: any } | undefined;
+    await expect.poll(() => (parsed = readCompleteJson(file(threadId, "json"))) !== undefined, { timeout: 20_000 }).toBe(true);
+    return parsed!.value;
   };
   const messages = async (threadId: string) => (await api("GET", `/api/threads/${threadId}/messages?limit=100`)).messages as any[];
   const botsNow = async () => (await api("GET", "/api/bots")).bots as any[];

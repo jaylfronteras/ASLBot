@@ -28,7 +28,7 @@ pnpm package:win
 pnpm package:mac
 ```
 
-The Windows installer is `ASLBot-<version>-setup.exe`. Packaging does not require Docker or Podman.
+The Windows installer is `ASLBot-<version>-setup.exe`. `pnpm package:win` also builds `ASLBot-<version>-portable.exe`, a single exe that needs no install and can run from a USB drive. The portable copy keeps everything (settings, bots, chats, keys, logs and Electron's own data) in an `ASLBot-data` folder next to the exe instead of `~/.aslbot` or `%APPDATA%`, and does not auto-update. Packaging does not require Docker or Podman.
 
 ## License
 
