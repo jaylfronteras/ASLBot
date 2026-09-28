@@ -38,7 +38,11 @@ function inContainer(script, { expectFailure = false } = {}) {
     const output = execFileSync(
       RUNTIME,
       [
-        "run", "--rm",
+        // Privileged so the package's postinst can load its browser AppArmor
+        // profile the way it does on a real Ubuntu 24.04 host. Unprivileged,
+        // the container inherits the host's user-namespace restriction but
+        // cannot reach AppArmor, and the postinst correctly fails closed.
+        "run", "--rm", "--privileged",
         "-v", `${deb}:/tmp/package.deb:ro`,
         "-e", "DEBIAN_FRONTEND=noninteractive",
         IMAGE,
@@ -65,6 +69,9 @@ const prepare = [
   "set -e",
   "apt-get update -qq",
   "apt-get install -y -qq sudo >/dev/null",
+  // A privileged container still starts without securityfs; mount it so
+  // AppArmor is visible (apparmor_status --enabled, apparmor_parser -r).
+  "if [ ! -d /sys/kernel/security/apparmor ]; then mount -t securityfs securityfs /sys/kernel/security || true; fi",
   `mkdir -p "$(dirname "${staged}")"`,
   `cp /tmp/package.deb "${staged}"`,
 ].join("\n");
